@@ -1,0 +1,91 @@
+/* Reset básico e configuração de altura */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background-color: #202123;
+  color: #ffffff;
+}
+
+/* Container do layout de 3 colunas */
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Estilos para cada coluna */
+.column {
+  padding: 1rem;
+}
+
+/* Coluna da Esquerda: 20% do espaço, com borda à direita */
+.left {
+  width: 20%;
+  border-right: 1px solid #343541;
+}
+
+/* Coluna Central: 50% do espaço, com borda à direita */
+.center {
+  width: 50%;
+  border-right: 1px solid #343541;
+}
+
+/* Coluna da Direita: 30% do espaço */
+.right {
+  width: 30%;
+}
+.CodeMirror {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 100% !important;
+}
+
+/* Estilização simples para input e botão */
+input[type="text"] {
+  width: 100%;
+  padding: 0.5rem;
+  background: #2d2d2d;
+  border: 1px solid #555;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background: #4caf50;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+}
+
+/* Barra de rolagem customizada - Chrome, Edge, Safari */
+
+::-webkit-scrollbar {
+  width: 8px;               /* Largura da scrollbar */
+  background: transparent;  /* Fundo transparente */
+}
+
+/* Trilho (track) */
+::-webkit-scrollbar-track {
+  background: transparent;  /* Deixa o trilho transparente */
+}
+
+/* Thumb (a parte que "rola") */
+::-webkit-scrollbar-thumb {
+  background-color: #555;   /* Cor do thumb */
+  border-radius: 4px;       /* Arredonda */
+  border: 2px solid transparent; /* Cria um "espacinho" para dar efeito */
+  background-clip: content-box;  /* Garante que o border funcione */
+}
+
+/* Thumb ao passar o mouse (hover) */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #888;   /* Fica mais claro ao hover */
+}
+
+/* Canto inferior (em alguns casos) */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
