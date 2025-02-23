@@ -1,8 +1,16 @@
 // src/ChatApp.js
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { FaArrowUp } from "react-icons/fa";
-import { FaMoon, FaSun } from "react-icons/fa"; // Ícones de lua/sol
+import {
+  FaArrowUp,
+  FaMoon,
+  FaSun,
+  FaBars,
+  FaEllipsisV,
+  FaPencilAlt,
+  FaTrash,
+  FaEnvelope
+} from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Logo from "./assets/logo.svg";
@@ -11,18 +19,27 @@ import "./index.css";
 function ChatApp() {
   const { logout } = useAuth0();
 
-  // Estado para controlar o tema (true => dark mode, false => light mode)
+  // =============== STATES ===============
+  const [showChatList, setShowChatList] = useState(false);
+  const [openMenuChatId, setOpenMenuChatId] = useState(null);
+  const [chatList, setChatList] = useState(() => {
+    const stored = localStorage.getItem("chatList");
+    return stored ? JSON.parse(stored) : [];
+  });
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // SessionId e mensagens
+  // ID do chat atual
   const [sessionId, setSessionId] = useState(() => {
-    return localStorage.getItem("sessionId") || null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatIdFromURL = urlParams.get("chatId");
+    const storedSessionId = localStorage.getItem("sessionId") || null;
+    return chatIdFromURL || storedSessionId;
   });
+
+  // Mensagens
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Olá Pavanelli, no que posso te ajudar hoje?" }
   ]);
-
-  // Input e estados auxiliares
   const [inputValue, setInputValue] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
@@ -32,14 +49,36 @@ function ChatApp() {
   const [assistantTypedText, setAssistantTypedText] = useState("");
   const typingIntervalRef = useRef(null);
 
-  // Referências
+  // Refs
   const textareaRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const chatListPanelRef = useRef(null);
 
-  // Efeito: digitação do texto do bot
+  // =============== EFFECTS ===============
+  // 1) Se não houver sessionId, cria ou usa o primeiro da lista
+  useEffect(() => {
+    if (!sessionId) {
+      if (chatList.length > 0) {
+        setSessionId(chatList[0].id);
+        updateURLWithChatId(chatList[0].id);
+      } else {
+        createNewSession();
+      }
+    } else {
+      addChatToListIfMissing(sessionId);
+      updateURLWithChatId(sessionId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 2) Salva chatList no localStorage sempre que mudar
+  useEffect(() => {
+    localStorage.setItem("chatList", JSON.stringify(chatList));
+  }, [chatList]);
+
+  // 3) Efeito de digitação do assistente
   useEffect(() => {
     if (!assistantFullText) return;
-
     setAssistantTypedText("");
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
@@ -64,7 +103,7 @@ function ChatApp() {
     };
   }, [assistantFullText]);
 
-  // Efeito: toda vez que assistantTypedText muda, atualiza a última mensagem do assistente
+  // 4) Atualiza a última msg do assistente enquanto digita
   useEffect(() => {
     if (!assistantTypedText) return;
     setMessages((prev) => {
@@ -77,7 +116,7 @@ function ChatApp() {
     });
   }, [assistantTypedText]);
 
-  // Efeito: auto-scroll sempre que 'messages' mudar
+  // 5) Auto-scroll ao atualizar messages
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -85,16 +124,101 @@ function ChatApp() {
     }
   }, [messages]);
 
-  // Função para enviar mensagem
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+  // 6) Fecha sub-menu ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (openMenuChatId && chatListPanelRef.current) {
+        if (!chatListPanelRef.current.contains(e.target)) {
+          setOpenMenuChatId(null);
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenuChatId]);
 
-    const userText = inputValue;
-    setInputValue("");
-    resetTextarea();
+  // =============== FUNÇÕES ===============
+  function createNewSession() {
+    const newId = crypto.randomUUID();
+    setSessionId(newId);
+    localStorage.setItem("sessionId", newId);
+    updateURLWithChatId(newId);
+    addChatToListIfMissing(newId);
+  }
 
-    setMessages((prev) => [...prev, { role: "user", content: userText }]);
+  function addChatToListIfMissing(chatId) {
+    const exists = chatList.some((chat) => chat.id === chatId);
+    if (!exists) {
+      const newChat = {
+        id: chatId,
+        name: `Chat ${chatList.length + 1}`
+      };
+      setChatList((prev) => [...prev, newChat]);
+    }
+  }
 
+  function updateURLWithChatId(id) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("chatId", id);
+    window.history.replaceState({}, "", url.toString());
+  }
+
+  function handleSelectChat(chatId) {
+    setSessionId(chatId);
+    localStorage.setItem("sessionId", chatId);
+    updateURLWithChatId(chatId);
+
+    setMessages([
+      {
+        role: "assistant",
+        content: "Olá Pavanelli, no que posso te ajudar hoje?"
+      }
+    ]);
+    setOpenMenuChatId(null);
+    setShowChatList(false);
+  }
+
+  function handleRenameChat(chatId) {
+    const newName = prompt("Novo nome do chat:");
+    if (!newName) return;
+    setChatList((prev) =>
+      prev.map((chat) => {
+        if (chat.id === chatId) {
+          return { ...chat, name: newName };
+        }
+        return chat;
+      })
+    );
+    setOpenMenuChatId(null);
+  }
+
+  function handleDeleteChat(chatId) {
+    if (!window.confirm("Deseja realmente excluir este chat?")) return;
+    setChatList((prev) => prev.filter((chat) => chat.id !== chatId));
+    setOpenMenuChatId(null);
+    if (sessionId === chatId) {
+      createNewSession();
+      setMessages([
+        {
+          role: "assistant",
+          content: "Olá Pavanelli, no que posso te ajudar hoje?"
+        }
+      ]);
+    }
+  }
+
+  async function handleSendMessage(customMsg) {
+    const textToSend = customMsg || inputValue.trim();
+    if (!textToSend) return;
+
+    if (!customMsg) {
+      setInputValue("");
+      resetTextarea();
+    }
+
+    setMessages((prev) => [...prev, { role: "user", content: textToSend }]);
     setIsThinking(true);
     setShowThinking(true);
 
@@ -103,17 +227,18 @@ function ChatApp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: userText,
+          message: textToSend,
           sessionId: sessionId
         })
       });
       const data = await response.json();
-
       let botReply = data.reply || "Erro: sem resposta.";
 
       if (data.sessionId) {
         setSessionId(data.sessionId);
         localStorage.setItem("sessionId", data.sessionId);
+        updateURLWithChatId(data.sessionId);
+        addChatToListIfMissing(data.sessionId);
       }
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
@@ -126,58 +251,69 @@ function ChatApp() {
       ]);
     } finally {
       setIsThinking(false);
-      setTimeout(() => {
-        setShowThinking(false);
-      }, 300);
+      setTimeout(() => setShowThinking(false), 300);
     }
-  };
+  }
 
-  // SHIFT+Enter => nova linha, Enter => enviar
-  const handleKeyDown = (e) => {
+  function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-  };
+  }
 
-  // Auto-expansão do textarea
-  const handleInput = (e) => {
+  function handleInput(e) {
     e.target.style.height = "auto";
     e.target.style.height = e.target.scrollHeight + "px";
-  };
+  }
 
-  // Reseta altura do textarea
-  const resetTextarea = () => {
+  function resetTextarea() {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  };
+  }
 
-  // Logout
-  const handleLogout = () => {
+  function handleLogout() {
     logout({ returnTo: window.location.origin });
-  };
+  }
 
-  // Toggle Dark/Light Mode
-  const toggleDarkMode = () => {
+  function toggleDarkMode() {
     setIsDarkMode((prev) => !prev);
-  };
+  }
 
+  function toggleMenu(chatId, e) {
+    e.stopPropagation();
+    setOpenMenuChatId((prev) => (prev === chatId ? null : chatId));
+  }
+
+  function handleEmailButton() {
+    handleSendMessage("Enviar por e-mail.");
+  }
+
+  // =============== RENDER ===============
   return (
-    // Aplica a classe "dark-mode" ou "light-mode" na div container
     <div className={`container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
-      {/* Barra superior */}
+      {/* HEADER fixo */}
       <div className="top-bar">
-      <div className="top-bar-left">
-      <img src={Logo} alt="logo" />
-      </div>
-      <div className="top-bar-center">
-        <span className="the-way-label">The Way</span>
-      </div>
-      <div className="top-bar-right">
-
-        {/* Botões no canto direito */}
-        <div style={{ display: "flex", gap: "1rem" }}>
+        <div className="top-bar-left">
+          <img src={Logo} alt="logo" />
+        </div>
+        <div className="top-bar-center">
+          <span className="the-way-label">The Way</span>
+        </div>
+        <div className="top-bar-right">
+          <button
+            onClick={() => setShowChatList(!showChatList)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "inherit",
+              cursor: "pointer",
+              fontSize: "1.2rem"
+            }}
+          >
+            <FaBars />
+          </button>
           <button
             onClick={toggleDarkMode}
             style={{
@@ -190,7 +326,6 @@ function ChatApp() {
           >
             {isDarkMode ? <FaSun /> : <FaMoon />}
           </button>
-
           <button
             onClick={handleLogout}
             style={{
@@ -213,9 +348,53 @@ function ChatApp() {
           </button>
         </div>
       </div>
-      </div>
 
-      {/* Área principal */}
+      {/* Painel de chats (lado direito) */}
+      {showChatList && (
+        <div className="chat-list-panel" ref={chatListPanelRef}>
+          <h3>Meus Chats</h3>
+          <ul>
+            {chatList.map((chat) => (
+              <li key={chat.id}>
+                <div className="chat-item" onClick={() => handleSelectChat(chat.id)}>
+                  <span>{chat.name}</span>
+                  <div
+                    className="chat-item-menu"
+                    onClick={(e) => toggleMenu(chat.id, e)}
+                  >
+                    <FaEllipsisV />
+                  </div>
+                  {openMenuChatId === chat.id && (
+                    <div
+                      className="chat-item-dropdown"
+                      style={{ display: "block", zIndex: 9999999 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button onClick={() => handleRenameChat(chat.id)}>
+                        <FaPencilAlt
+                          style={{
+                            color: isDarkMode ? "#fff" : "#333"
+                          }}
+                        />
+                        Renomear
+                      </button>
+                      <button onClick={() => handleDeleteChat(chat.id)}>
+                        <FaTrash style={{ color: "red" }} />
+                        Excluir
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <button onClick={createNewSession} className="new-chat-button">
+            + Novo Chat
+          </button>
+        </div>
+      )}
+
+      {/* MAIN (rolável via .messages-feed) */}
       <div className="main">
         <div className="messages-feed" ref={messagesContainerRef}>
           {messages.map((msg, index) => {
@@ -240,7 +419,7 @@ function ChatApp() {
             );
           })}
 
-          {/* Se showThinking => animação de “digitando” */}
+          {/* "Digitando..." */}
           {showThinking && (
             <div className="message assistant-message fade-in">
               <div className="typing-indicator">
@@ -253,11 +432,10 @@ function ChatApp() {
         </div>
       </div>
 
-      {/* Barra inferior (com 2 retângulos) */}
+      {/* Barra inferior sempre visível */}
       <div className="bottom-input">
         <div className="bottom-input-bg" />
         <div className="new-input-box">
-          <div className="left-spacer" />
           <textarea
             ref={textareaRef}
             placeholder="Mensagem para o The Way"
@@ -266,11 +444,34 @@ function ChatApp() {
             onKeyDown={handleKeyDown}
             onInput={handleInput}
             rows={1}
+            style={{ flex: 0.7, marginRight: "0.5rem" }}
           />
-          <FaArrowUp className="send-icon" onClick={handleSendMessage} />
+          <div
+            className="input-actions"
+            style={{ flex: 0.3, display: "flex", gap: "0.5rem" }}
+          >
+            <FaEnvelope
+              onClick={handleEmailButton}
+              style={{
+                cursor: "pointer",
+                fontSize: "1.2rem",
+                color: isDarkMode ? "#ddd" : "#333"
+              }}
+            />
+            <FaArrowUp
+              className="send-icon"
+              onClick={() => handleSendMessage()}
+              style={{
+                fontSize: "1.2rem",
+                cursor: "pointer",
+                color: isDarkMode ? "#ddd" : "#333"
+              }}
+            />
+          </div>
         </div>
       </div>
 
+      {/* FOOTER fixo no final */}
       <div className="footer-text">
         Todos os direitos reservados a Alta Vista Investimentos - V1.0.0
       </div>
