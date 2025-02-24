@@ -2,7 +2,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Auth0Provider } from "@auth0/auth0-react";
-import App from "./App";
+import App from "./App.js";
 import "./index.css";
 
 // Substitua pelos valores do seu app no Painel da Auth0:
