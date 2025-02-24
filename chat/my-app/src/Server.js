@@ -7,6 +7,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Rota /teste
+app.get("/", (req, res) => {
+  res.send("API está rodando corretamente!");
+});
+
 // Rota /api/agent
 app.post("/api/agent", async (req, res) => {
   const { message, sessionId } = req.body;
