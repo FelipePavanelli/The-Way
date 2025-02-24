@@ -77,6 +77,6 @@ app.post("/api/sendEmail", async (req, res) => {
   }
 });
 
-app.listen(3001, () => {
+app.listen(4000, () => {
   console.log("API rodando na porta 4000");
 });
