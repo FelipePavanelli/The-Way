@@ -226,7 +226,7 @@ function ChatApp() {
     //   const response = await fetch("http://localhost:4000/api/agent", {
     // try {
 //Prod
-      const response = await fetch("https://api.theway.altavistainvest.com.br/api/agent", {
+      const response = await fetch("http://api.theway.altavistainvest.com.br/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
