@@ -38,7 +38,7 @@ function ChatApp() {
 
   // Mensagens
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Olá Pavanelli, no que posso te ajudar hoje?" }
+    { role: "assistant", content: "Olá Rogério, no que posso te ajudar hoje?" }
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isThinking, setIsThinking] = useState(false);
