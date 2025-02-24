@@ -1,4 +1,4 @@
-// src/ChatApp.js
+// src/App.js
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import {
@@ -16,7 +16,7 @@ import remarkGfm from "remark-gfm";
 import Logo from "./assets/logo.svg";
 import "./index.css";
 
-function ChatApp() {
+function App() {
   const { logout } = useAuth0();
 
   // =============== STATES ===============
@@ -479,4 +479,4 @@ function ChatApp() {
   );
 }
 
-export default ChatApp;
+export default App;
