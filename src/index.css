@@ -18,7 +18,7 @@ html, body {
 /* Tema escuro */
 .dark-mode {
   --bg-color: #1e1e2e;
-  --text-color: #ffffff;
+  --text-color: #cecccc;
   --input-bg: rgba(255, 255, 255, 0.1);
   --card-bg: #2e2e3e;
   --assistant-msg-bg: transparent;
@@ -162,7 +162,7 @@ html, body {
 }
 .dark-mode .new-chat-button {
   background: #4d4d4d;
-  color: #fff;
+  color: #e3e3e3;
 }
 
 /* Área principal que conterá a .messages-feed */
@@ -212,13 +212,16 @@ html, body {
 .user-message {
   align-self: flex-end;
   background: #AC9C8C;
-  color: #fff;
+  color: #ededed;
   padding: 0.03rem 0.8rem;
   border-radius: 12px;
   text-align: left;
   font-weight: 600;
   font-size: 0.9rem;
   line-height: 1.2;
+}
+.user-message p {
+  white-space: pre-wrap;
 }
 .assistant-message {
   align-self: flex-start;
@@ -232,7 +235,7 @@ html, body {
 
 /* Fade in */
 .fade-in {
-  animation: fadeIn 0.8s ease-in;
+  animation: fadeIn 0.5s ease-in;
 }
 @keyframes fadeIn {
   from {
@@ -272,7 +275,7 @@ html, body {
   animation-delay: 0.4s;
 }
 .dark-mode .typing-indicator span {
-  background: #fff;
+  background: #cecccc;
 }
 
 /* Barra inferior */
@@ -330,7 +333,7 @@ html, body {
   overflow: hidden;
 }
 .dark-mode .new-input-box textarea {
-  color: #fff;
+  color: #cecccc;
 }
 .send-icon {
   color: #333;
@@ -338,7 +341,7 @@ html, body {
   font-size: 1.2rem;
 }
 .dark-mode .send-icon {
-  color: #ddd;
+  color: #cecccc;
 }
 
 /* Footer fixo no final */
@@ -350,4 +353,58 @@ html, body {
   text-align: center;
   font-family: "Montserrat", sans-serif;
   font-weight: 400;
+}
+/* Estilos específicos para tabelas dentro das mensagens do assistente */
+.assistant-message table {
+  width: 100%;              /* tabela ocupa toda a largura da mensagem */
+  margin-top: 0.5rem;       /* pequeno espaçamento superior */
+  border-collapse: collapse;/* remove espaços entre células */
+  border: 1px solid #ccc;   /* borda externa */
+  border-radius: 8px;       /* arredondar, se quiser */
+  overflow: hidden;         /* para manter arredondado */
+  text-align: center;       /* centraliza texto nas células */
+  font-family: "Menlo", monospace; /* ou outra fonte se preferir */
+}
+
+.assistant-message th,
+.assistant-message td {
+  border: 1px solid #ccc;   /* borda entre células */
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Se quiser cor de fundo no cabeçalho */
+.assistant-message th {
+  background-color: #f0dcbc;
+  color: #000;
+  font-weight: 700;
+}
+.center-button-container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0; /* Espaço vertical */
+}
+
+.center-button {
+  background: #d6c3a9;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  color: #333;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: background 0.2s;
+}
+
+.center-button:hover {
+  background: #c9b49b;
+}
+.dark-mode .center-button {
+  background: #4d4d4d;
+  color: #fff;
+}
+.dark-mode .center-button:hover {
+  background: #5d5d5d;
 }

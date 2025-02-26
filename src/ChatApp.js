@@ -1,4 +1,3 @@
-// src/ChatApp.js
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import {
@@ -28,6 +27,9 @@ function ChatApp() {
   });
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Controla se exibe o botão no footer ou não
+  const [showPlanningButton, setShowPlanningButton] = useState(true);
+
   // ID do chat atual
   const [sessionId, setSessionId] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -38,7 +40,7 @@ function ChatApp() {
 
   // Mensagens
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Olá Rogério, no que posso te ajudar hoje?" }
+    { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isThinking, setIsThinking] = useState(false);
@@ -85,6 +87,7 @@ function ChatApp() {
     }
 
     let index = 0;
+    // Ajuste o tempo para acelerar/diminuir a velocidade
     typingIntervalRef.current = setInterval(() => {
       if (index < assistantFullText.length) {
         setAssistantTypedText((prev) => prev + assistantFullText[index]);
@@ -94,7 +97,7 @@ function ChatApp() {
         clearInterval(typingIntervalRef.current);
         typingIntervalRef.current = null;
       }
-    }, 10);
+    }, 5); // 5 ms => bem rápido
 
     return () => {
       if (typingIntervalRef.current) {
@@ -173,7 +176,7 @@ function ChatApp() {
     setMessages([
       {
         role: "assistant",
-        content: "Olá Pavanelli, no que posso te ajudar hoje?"
+        content: "Olá, no que posso te ajudar hoje?"
       }
     ]);
     setOpenMenuChatId(null);
@@ -203,7 +206,7 @@ function ChatApp() {
       setMessages([
         {
           role: "assistant",
-          content: "Olá Pavanelli, no que posso te ajudar hoje?"
+          content: "Olá, no que posso te ajudar hoje?"
         }
       ]);
     }
@@ -221,12 +224,12 @@ function ChatApp() {
     setMessages((prev) => [...prev, { role: "user", content: textToSend }]);
     setIsThinking(true);
     setShowThinking(true);
-// Local
+
     try {
-    //   const response = await fetch("http://localhost:4000/api/agent", {
-    // try {
-//Prod
-      const response = await fetch("https://api.theway.altavistainvest.com.br/api/agent", {
+      // Modo local
+      const response = await fetch("http://localhost:4000/api/agent", {
+        // produção:
+        // const response = await fetch("https://api.theway.altavistainvest.com.br/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -258,8 +261,9 @@ function ChatApp() {
     }
   }
 
+  // Enter => envia a mensagem (sem Ctrl)
   function handleKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleSendMessage();
     }
@@ -293,7 +297,23 @@ function ChatApp() {
     handleSendMessage("Enviar por e-mail.");
   }
 
-  // =============== RENDER ===============
+  // Botão "Quero fazer um planejamento financeiro"
+  function handlePlanningButtonClick() {
+    handleSendMessage("Quero fazer um planejamento financeiro.");
+    setShowPlanningButton(false);
+  }
+
+  // =========== LÓGICA PARA SUMIR COM O BOTÃO SE O CHAT ESTÁ "INICIADO" ==========
+  // Definimos "iniciado" se o chat tiver qualquer mensagem de role === 'user'
+  const hasUserMessage = messages.some((m) => m.role === "user");
+
+  // Se existir userMessage, some com o botão
+  useEffect(() => {
+    if (hasUserMessage) {
+      setShowPlanningButton(false);
+    }
+  }, [hasUserMessage]);
+
   return (
     <div className={`container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
       {/* HEADER fixo */}
@@ -374,11 +394,7 @@ function ChatApp() {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button onClick={() => handleRenameChat(chat.id)}>
-                        <FaPencilAlt
-                          style={{
-                            color: isDarkMode ? "#fff" : "#333"
-                          }}
-                        />
+                        <FaPencilAlt style={{ color: isDarkMode ? "#fff" : "#333" }} />
                         Renomear
                       </button>
                       <button onClick={() => handleDeleteChat(chat.id)}>
@@ -412,7 +428,7 @@ function ChatApp() {
                 }
               >
                 {isUser ? (
-                  <p>{msg.content}</p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{msg.content}</p>
                 ) : (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {msg.content}
@@ -421,7 +437,6 @@ function ChatApp() {
               </div>
             );
           })}
-
           {/* "Digitando..." */}
           {showThinking && (
             <div className="message assistant-message fade-in">
@@ -435,46 +450,79 @@ function ChatApp() {
         </div>
       </div>
 
-      {/* Barra inferior sempre visível */}
+      {/* FOOTER */}
       <div className="bottom-input">
-        <div className="bottom-input-bg" />
-        <div className="new-input-box">
-          <textarea
-            ref={textareaRef}
-            placeholder="Mensagem para o The Way"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onInput={handleInput}
-            rows={1}
-            style={{ flex: 0.7, marginRight: "0.5rem" }}
-          />
+        {/* Se showPlanningButton => mostra só o botão. Se false => mostra input */}
+        {showPlanningButton ? (
           <div
-            className="input-actions"
-            style={{ flex: 0.3, display: "flex", gap: "0.5rem" }}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              width: "100%",
+              position: "relative",
+              zIndex: 2,
+              margin: "1rem 0"
+            }}
           >
-            <FaEnvelope
-              onClick={handleEmailButton}
+            <button
+              onClick={handlePlanningButtonClick}
               style={{
+                background: "#d6c3a9",
+                border: "none",
+                borderRadius: "4px",
+                padding: "0.75rem 1.5rem",
                 cursor: "pointer",
-                fontSize: "1.2rem",
-                color: isDarkMode ? "#ddd" : "#333"
+                fontWeight: "bold",
+                color: "#333",
+                fontSize: "1rem",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                transition: "background 0.2s"
               }}
-            />
-            <FaArrowUp
-              className="send-icon"
-              onClick={() => handleSendMessage()}
-              style={{
-                fontSize: "1.2rem",
-                cursor: "pointer",
-                color: isDarkMode ? "#ddd" : "#333"
-              }}
-            />
+            >
+              Quero fazer um planejamento financeiro
+            </button>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="bottom-input-bg" />
+            <div className="new-input-box">
+              <textarea
+                ref={textareaRef}
+                placeholder="Mensagem para o The Way"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onInput={handleInput}
+                rows={1}
+                style={{ flex: 0.7, marginRight: "0.5rem" }}
+              />
+              <div
+                className="input-actions"
+                style={{ flex: 0.3, display: "flex", gap: "0.5rem" }}
+              >
+                <FaEnvelope
+                  onClick={handleEmailButton}
+                  style={{
+                    cursor: "pointer",
+                    fontSize: "1.2rem",
+                    color: isDarkMode ? "#ddd" : "#333"
+                  }}
+                />
+                <FaArrowUp
+                  className="send-icon"
+                  onClick={() => handleSendMessage()}
+                  style={{
+                    fontSize: "1.2rem",
+                    cursor: "pointer",
+                    color: isDarkMode ? "#ddd" : "#333"
+                  }}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* FOOTER fixo no final */}
       <div className="footer-text">
         Todos os direitos reservados a Alta Vista Investimentos - V1.0.0
       </div>

@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Rota /teste
+// Rota /teste - para verificar se a API está rodando
 app.get("/", (req, res) => {
   res.send("API está rodando corretamente!");
 });
@@ -18,12 +18,10 @@ app.post("/api/agent", async (req, res) => {
   let finalSessionId = sessionId || uuidv4();
 
   try {
+    // Utilizando o webhook do n8n (produção)
     const flowResp = await fetch(
-      "https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
+      "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
       {
-    // const flowResp = await fetch(
-    //   "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
-    //   {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -36,7 +34,7 @@ app.post("/api/agent", async (req, res) => {
     const data = await flowResp.json();
     let reply = data.reply || "Erro: sem resposta.";
 
-    // Substituições
+    // Substituições no reply
     reply = reply.replace(
       "{data_atual}",
       new Date().toLocaleDateString("pt-BR")
@@ -56,12 +54,10 @@ app.post("/api/sendEmail", async (req, res) => {
   const finalSessionId = sessionId || uuidv4();
 
   try {
+    // Utilizando o webhook do n8n (produção)
     const flowResp = await fetch(
-      "https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
+      "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
       {
-    // const flowResp = await fetch(
-    //   "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
-    //   {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -74,7 +70,7 @@ app.post("/api/sendEmail", async (req, res) => {
     const data = await flowResp.json();
     let reply = data.reply || "Erro: sem resposta.";
 
-    // Substituições
+    // Substituições no reply
     reply = reply.replace(
       "{data_atual}",
       new Date().toLocaleDateString("pt-BR")
