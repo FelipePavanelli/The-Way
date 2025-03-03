@@ -32,7 +32,7 @@ html, body {
   height: 100vh; 
   background: var(--bg-color);
   color: var(--text-color);
-  font-family: "Montserrat", sans-serif;
+  font-family: "Helvética", sans-serif;
 }
 
 /* Top bar */

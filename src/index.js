@@ -7,13 +7,15 @@ import "./index.css";
 const domain = "altavista.us.auth0.com";
 const clientId = "G2210oBgOBElx3xNhosej3iUhaIYCGaK";
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Auth0Provider
       domain={domain}
       clientId={clientId}
-      redirectUri={window.location.origin}
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+        scope: "openid profile email"
+      }}
     >
       <App />
     </Auth0Provider>

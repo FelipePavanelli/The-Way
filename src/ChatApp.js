@@ -8,14 +8,18 @@ import {
   FaEllipsisV,
   FaPencilAlt,
   FaTrash,
-  FaEnvelope
+  FaEnvelope,
+  FaSignOutAlt,
+  FaChartLine,
+  FaHubspot,
+  FaDollarSign
 } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Logo from "./assets/logo.svg";
 import "./index.css";
 
-// Função para gerar nome único do tipo "Chat X"
+/** Gera nome único para o chat, ex. "Chat 1", "Chat 2" etc. */
 function getUniqueChatName(chatList) {
   let maxNumber = 0;
   chatList.forEach((chat) => {
@@ -28,12 +32,31 @@ function getUniqueChatName(chatList) {
   return `Chat ${maxNumber + 1}`;
 }
 
+/** Extrai a inicial do usuário (nome/nickname/email) */
+function getUserInitial(user) {
+  if (!user) return "z";
+  const name = user.name || user.nickname || user.email || "z";
+  return name.charAt(0).toUpperCase();
+}
+
+/** Mensagem inicial, usando nome do usuário, se disponível */
+function getInitialMessage(user) {
+  if (user) {
+    const userName = user.name || user.nickname || user.email;
+    return `Olá, ${userName}! No que posso te ajudar hoje?`;
+  }
+  return "Olá, no que posso te ajudar hoje?";
+}
 function ChatApp() {
-  const { logout } = useAuth0();
+  // Pega user e isAuthenticated do Auth0
+  const { user, isAuthenticated, logout } = useAuth0();
 
   // =============== STATES ===============
   const [showChatList, setShowChatList] = useState(false);
   const [openMenuChatId, setOpenMenuChatId] = useState(null);
+
+  // (NOVO) Controle do menu do perfil (círculo)
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // Lista de chats (persistido em localStorage)
   const [chatList, setChatList] = useState(() => {
@@ -53,7 +76,8 @@ function ChatApp() {
 
   // Mensagens do chat atual
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
+    // Colocamos algo padrão, mas será sobrescrito se não tiver localStorage
+    // { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
   ]);
 
   // Input do usuário
@@ -73,7 +97,7 @@ function ChatApp() {
   const messagesContainerRef = useRef(null);
   const chatListPanelRef = useRef(null);
 
-  // =============== FUNÇÕES LOCALSTORAGE ===============
+  // =============== LOCALSTORAGE FUNCS ===============
   function getStoredMessages(sid) {
     const raw = localStorage.getItem("messagesBySession");
     if (!raw) return [];
@@ -128,11 +152,12 @@ function ChatApp() {
     if (stored.length > 0) {
       setMessages(stored);
     } else {
+      // Se não houver nada salvo, define a mensagem inicial com nome do user
       setMessages([
-        { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
+        { role: "assistant", content: getInitialMessage(user) }
       ]);
     }
-  }, [sessionId]);
+  }, [sessionId, user]);
 
   // 4) Salva mensagens no localStorage sempre que elas mudam
   useEffect(() => {
@@ -189,7 +214,7 @@ function ChatApp() {
     }
   }, [messages]);
 
-  // 8) Fecha sub-menu ao clicar fora
+  // 8) Fecha sub-menu de chat ao clicar fora
   useEffect(() => {
     function handleClickOutside(e) {
       if (openMenuChatId && chatListPanelRef.current) {
@@ -204,6 +229,24 @@ function ChatApp() {
     };
   }, [openMenuChatId]);
 
+  // (Opcional) Fecha menu de perfil ao clicar fora
+  useEffect(() => {
+    function handleClickOutsideProfile(e) {
+      // Se o menu estiver aberto e não clicou nele, fecha
+      if (showProfileMenu) {
+        // Tente achar .profile-menu ou o botão
+        const menuEl = document.getElementById("profile-menu-dropdown");
+        if (menuEl && !menuEl.contains(e.target)) {
+          setShowProfileMenu(false);
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutsideProfile);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutsideProfile);
+    };
+  }, [showProfileMenu]);
+
   // =============== FUNÇÕES ===============
   function createNewSession() {
     const newId = crypto.randomUUID();
@@ -211,7 +254,6 @@ function ChatApp() {
     localStorage.setItem("sessionId", newId);
     updateURLWithChatId(newId);
 
-    // Gera um nome único
     const newChatName = getUniqueChatName(chatList);
     const newChat = { id: newId, name: newChatName };
     setChatList((prev) => [...prev, newChat]);
@@ -220,7 +262,6 @@ function ChatApp() {
   function addChatToListIfMissing(chatId) {
     const exists = chatList.some((chat) => chat.id === chatId);
     if (!exists) {
-      // Gera nome único
       const newChatName = getUniqueChatName(chatList);
       const newChat = { id: chatId, name: newChatName };
       setChatList((prev) => [...prev, newChat]);
@@ -261,18 +302,15 @@ function ChatApp() {
     removeMessagesForChatId(chatId);
     setOpenMenuChatId(null);
 
-    // Se excluiu o chat atual, cria um novo e reseta msgs
     if (sessionId === chatId) {
       createNewSession();
       setMessages([
-        { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
+        { role: "assistant", content: getInitialMessage(user) }
       ]);
     }
   }
 
-  // Importante: ignoramos o sessionId que o servidor retorna
   async function handleSendMessage(customMsg) {
-    // Se o bot estiver digitando, não permite nova msg
     if (isThinking) return;
 
     const textToSend = customMsg || inputValue.trim();
@@ -293,15 +331,15 @@ function ChatApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: textToSend,
-          sessionId: sessionId
+          sessionId: sessionId,
+          userName: user?.name || "",
+          userId: user?.sub || "",
+          userEmail: user?.email || ""
         })
       });
       const data = await response.json();
       let botReply = data.reply || "Erro: sem resposta.";
 
-      // Não atualizamos sessionId local (ignoramos data.sessionId)
-
-      // Cria msg do assistente vazia, que será preenchida via digitação
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
       setAssistantFullText(botReply);
     } catch (err) {
@@ -316,16 +354,14 @@ function ChatApp() {
     }
   }
 
-  // Três botões iniciais se não houver msg de user
+  // Botões iniciais se não houver msg de user
   const hasUserMessage = messages.some((m) => m.role === "user");
   const showInitialButtons = !hasUserMessage;
 
-  // Chamado pelos 3 botões de planejamento
   function handlePlanningButtonClick(text) {
     handleSendMessage(text);
   }
 
-  // =============== OUTRAS FUNÇÕES ===============
   function handleKeyDown(e) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -376,6 +412,8 @@ function ChatApp() {
         <div className="top-bar-center">
           <span className="the-way-label">The Way</span>
         </div>
+
+        {/* TOP BAR RIGHT */}
         <div className="top-bar-right">
           <button
             onClick={() => setShowChatList(!showChatList)}
@@ -401,26 +439,102 @@ function ChatApp() {
           >
             {isDarkMode ? <FaSun /> : <FaMoon />}
           </button>
-          <button
-            onClick={handleLogout}
-            style={{
-              background: "#f5e8d6",
-              border: "none",
-              borderRadius: "9999px",
-              width: "2.5rem",
-              height: "2.5rem",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-              color: "#333",
-              cursor: "pointer",
-              fontWeight: "bold",
-              fontSize: "1rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            F
-          </button>
+
+          {/* BOTÃO DE PERFIL / MENU */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              style={{
+                background: "#f5e8d6",
+                border: "none",
+                borderRadius: "9999px",
+                width: "2.5rem",
+                height: "2.5rem",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+                color: "#333",
+                cursor: "pointer",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              {isAuthenticated ? getUserInitial(user) : "z"}
+            </button>
+
+            {showProfileMenu && (
+              <div
+                id="profile-menu-dropdown"
+                className="profile-menu"
+                style={{
+                  position: "absolute",
+                  top: "3.2rem",
+                  right: 0,
+                  minWidth: "180px", // para evitar quebra de linha
+                  background: isDarkMode ? "#2e2e3e" : "#f5e8d6",
+                  border: isDarkMode ? "1px solid #444" : "1px solid #ddd",
+                  borderRadius: "8px",
+                  padding: "0.5rem 1rem",
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.2)"
+                }}
+              >
+                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                  <li
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.3rem 0",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <FaDollarSign />
+                    AV Comissões
+                  </li>
+                  <li
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.3rem 0",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <FaChartLine />
+                    TradeInsights
+                  </li>
+                  <li
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.3rem 0",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <FaHubspot />
+                    HubSpot
+                  </li>
+                  <li
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.3rem 0",
+                      cursor: "pointer",
+                      color: "red",
+                      fontWeight: "bold"
+                    }}
+                    onClick={handleLogout}
+                  >
+                    <FaSignOutAlt />
+                    Sair
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -491,7 +605,7 @@ function ChatApp() {
               </div>
             );
           })}
-          {/* Digitando... */}
+          {/* "Digitando..." */}
           {showThinking && (
             <div className="message assistant-message fade-in">
               <div className="typing-indicator">
@@ -506,41 +620,42 @@ function ChatApp() {
 
       {/* FOOTER */}
       <div className="bottom-input">
-      {showInitialButtons ? (
-  <div className="initial-buttons-container">
-    <button
-      className="initial-button"
-      onClick={() =>
-        handlePlanningButtonClick(
-          "Quero fazer um Planejamento Financeiro passo a passo."
-        )
-      }
-    >
-      Quero fazer um Planejamento Financeiro passo a passo.
-    </button>
+        {showInitialButtons ? (
+          <div className="initial-buttons-container">
+            <button
+              className="initial-button"
+              onClick={() =>
+                handlePlanningButtonClick(
+                  "Quero fazer um Planejamento Financeiro passo a passo."
+                )
+              }
+            >
+              Quero fazer um Planejamento Financeiro passo a passo.
+            </button>
 
-    <button
-      className="initial-button"
-      onClick={() =>
-        handlePlanningButtonClick(
-          "Quero fazer um Planejamento Financeiro no formato estruturado de uma vez."
-        )
-      }
-    >
-      Quero fazer um Planejamento Financeiro no formato estruturado de uma vez.
-    </button>
+            <button
+              className="initial-button"
+              onClick={() =>
+                handlePlanningButtonClick(
+                  "Quero fazer um Planejamento Financeiro no formato estruturado de uma vez."
+                )
+              }
+            >
+              Quero fazer um Planejamento Financeiro no formato estruturado de
+              uma vez.
+            </button>
 
-    <button
-      className="initial-button"
-      onClick={() =>
-        handlePlanningButtonClick(
-          "Quero fazer um Planejamento Financeiro em conversa livre."
-        )
-      }
-    >
-      Quero fazer um Planejamento Financeiro em conversa livre.
-    </button>
-  </div>
+            <button
+              className="initial-button"
+              onClick={() =>
+                handlePlanningButtonClick(
+                  "Quero fazer um Planejamento Financeiro em conversa livre."
+                )
+              }
+            >
+              Quero fazer um Planejamento Financeiro em conversa livre.
+            </button>
+          </div>
         ) : (
           <>
             <div className="bottom-input-bg" />
@@ -553,7 +668,7 @@ function ChatApp() {
                 onKeyDown={handleKeyDown}
                 onInput={handleInput}
                 rows={1}
-                disabled={isThinking} // desabilita se o bot estiver digitando
+                disabled={isThinking}
                 style={{
                   flex: 0.7,
                   marginRight: "0.5rem",
@@ -592,7 +707,7 @@ function ChatApp() {
       </div>
 
       <div className="footer-text">
-        Todos os direitos reservados a Alta Vista Investimentos - V1.0.0
+        Todos os direitos reservados a Alta Vista Investimentos - V1.0.5
       </div>
     </div>
   );
