@@ -1,3 +1,4 @@
+// server.js
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
@@ -5,22 +6,51 @@ import { v4 as uuidv4 } from "uuid";
 
 const app = express();
 app.use(cors());
-app.use(express.json());
 
-// Rota /teste - para verificar se a API está rodando
+// 1) Remove app.use(express.json()) e use express.raw() para receber qualquer coisa
+app.use(express.raw({ type: "*/*", limit: "10mb" }));
+
+// 2) Função auxiliar para extrair { message, sessionId } de um body cru (Buffer)
+function parseBody(rawBody) {
+  // Se não houver body, retorna vazio
+  if (!rawBody) {
+    return { message: "", sessionId: null };
+  }
+
+  // Converte Buffer -> string
+  const bodyString = rawBody.toString("utf8");
+  let parsed;
+  try {
+    // Tenta interpretar como JSON
+    parsed = JSON.parse(bodyString);
+  } catch (err) {
+    console.error("[DEBUG] Body não é JSON válido (ou é HTML):", err);
+    parsed = {};
+  }
+
+  // Extrai as props, ou valores default
+  const { message = "", sessionId = null } = parsed;
+  return { message, sessionId };
+}
+
+// 3) Exemplo de rota GET
 app.get("/", (req, res) => {
   res.send("API está rodando corretamente!");
 });
 
-// Rota /api/agent
+// 4) Rota principal do agente
 app.post("/api/agent", async (req, res) => {
-  const { message, sessionId } = req.body;
-  let finalSessionId = sessionId || uuidv4();
+  // Aqui NÃO fazemos destructuring direto de req.body!
+  // Em vez disso, chamamos parseBody:
+  const { message, sessionId } = parseBody(req.body);
+
+  // Se o front-end não enviar sessionId, cria um novo
+  const finalSessionId = sessionId || uuidv4();
 
   try {
-    // Utilizando o webhook do n8n (produção)
+    // Chamando n8n
     const flowResp = await fetch(
-      "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
+      "https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -31,16 +61,21 @@ app.post("/api/agent", async (req, res) => {
       }
     );
 
-    const data = await flowResp.json();
+    // Vamos ler a resposta como texto e tentar parsear JSON
+    const rawText = await flowResp.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (err) {
+      console.error("[DEBUG] Resposta não é JSON. Pode ser HTML de erro.\n", rawText);
+      data = { reply: rawText };
+    }
+
     let reply = data.reply || "Erro: sem resposta.";
-
-    // Substituições no reply
-    reply = reply.replace(
-      "{data_atual}",
-      new Date().toLocaleDateString("pt-BR")
-    );
+    // Substitui placeholders
+    reply = reply.replace("{data_atual}", new Date().toLocaleDateString("pt-BR"));
     reply = reply.replace(/\bundefined\b/g, "");
-
+    console.log("[DEBUG] JSON enviado ao n8n:", JSON.stringify({ reply, sessionId }, null, 2));
     return res.json({ reply, sessionId: finalSessionId });
   } catch (err) {
     console.error("[DEBUG] Erro ao chamar Flow:", err);
@@ -48,15 +83,14 @@ app.post("/api/agent", async (req, res) => {
   }
 });
 
-// Rota /api/sendEmail
+// 5) Rota /api/sendEmail (exemplo)
 app.post("/api/sendEmail", async (req, res) => {
-  const { sessionId } = req.body;
+  const { sessionId } = parseBody(req.body);
   const finalSessionId = sessionId || uuidv4();
 
   try {
-    // Utilizando o webhook do n8n (produção)
     const flowResp = await fetch(
-      "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
+      "https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,14 +101,17 @@ app.post("/api/sendEmail", async (req, res) => {
       }
     );
 
-    const data = await flowResp.json();
-    let reply = data.reply || "Erro: sem resposta.";
+    const rawText = await flowResp.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (err) {
+      console.error("[DEBUG] Resposta não é JSON. Pode ser HTML de erro.\n", rawText);
+      data = { reply: rawText };
+    }
 
-    // Substituições no reply
-    reply = reply.replace(
-      "{data_atual}",
-      new Date().toLocaleDateString("pt-BR")
-    );
+    let reply = data.reply || "Erro: sem resposta.";
+    reply = reply.replace("{data_atual}", new Date().toLocaleDateString("pt-BR"));
     reply = reply.replace(/\bundefined\b/g, "");
 
     return res.json({ reply, sessionId: finalSessionId });

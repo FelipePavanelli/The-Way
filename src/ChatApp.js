@@ -15,22 +15,35 @@ import remarkGfm from "remark-gfm";
 import Logo from "./assets/logo.svg";
 import "./index.css";
 
+// Função para gerar nome único do tipo "Chat X"
+function getUniqueChatName(chatList) {
+  let maxNumber = 0;
+  chatList.forEach((chat) => {
+    const match = chat.name.match(/^Chat (\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNumber) maxNumber = num;
+    }
+  });
+  return `Chat ${maxNumber + 1}`;
+}
+
 function ChatApp() {
   const { logout } = useAuth0();
 
   // =============== STATES ===============
   const [showChatList, setShowChatList] = useState(false);
   const [openMenuChatId, setOpenMenuChatId] = useState(null);
+
+  // Lista de chats (persistido em localStorage)
   const [chatList, setChatList] = useState(() => {
     const stored = localStorage.getItem("chatList");
     return stored ? JSON.parse(stored) : [];
   });
+
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Controla se exibe o botão no footer ou não
-  const [showPlanningButton, setShowPlanningButton] = useState(true);
-
-  // ID do chat atual
+  // sessionId local (ignora o que o servidor retorna)
   const [sessionId, setSessionId] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const chatIdFromURL = urlParams.get("chatId");
@@ -38,31 +51,61 @@ function ChatApp() {
     return chatIdFromURL || storedSessionId;
   });
 
-  // Mensagens
+  // Mensagens do chat atual
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
   ]);
+
+  // Input do usuário
   const [inputValue, setInputValue] = useState("");
+
+  // Indicadores de “pensando”
   const [isThinking, setIsThinking] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
 
-  // Efeito de digitação
+  // Efeito de digitação do assistente
   const [assistantFullText, setAssistantFullText] = useState("");
   const [assistantTypedText, setAssistantTypedText] = useState("");
   const typingIntervalRef = useRef(null);
 
-  // Refs
+  // Refs para scroll e clique-fora
   const textareaRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const chatListPanelRef = useRef(null);
 
-  // =============== EFFECTS ===============
-  // 1) Se não houver sessionId, cria ou usa o primeiro da lista
+  // =============== FUNÇÕES LOCALSTORAGE ===============
+  function getStoredMessages(sid) {
+    const raw = localStorage.getItem("messagesBySession");
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return parsed[sid] || [];
+  }
+
+  function storeMessages(sid, msgs) {
+    const raw = localStorage.getItem("messagesBySession");
+    const parsed = raw ? JSON.parse(raw) : {};
+    parsed[sid] = msgs;
+    localStorage.setItem("messagesBySession", JSON.stringify(parsed));
+  }
+
+  function removeMessagesForChatId(chatId) {
+    const raw = localStorage.getItem("messagesBySession");
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    delete parsed[chatId];
+    localStorage.setItem("messagesBySession", JSON.stringify(parsed));
+  }
+
+  // =============== USEEFFECTS ===============
+
+  // 1) Se não houver sessionId, cria ou seleciona o primeiro chat
   useEffect(() => {
     if (!sessionId) {
       if (chatList.length > 0) {
-        setSessionId(chatList[0].id);
-        updateURLWithChatId(chatList[0].id);
+        const firstChatId = chatList[0].id;
+        setSessionId(firstChatId);
+        localStorage.setItem("sessionId", firstChatId);
+        updateURLWithChatId(firstChatId);
       } else {
         createNewSession();
       }
@@ -73,12 +116,32 @@ function ChatApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2) Salva chatList no localStorage sempre que mudar
+  // 2) Salva chatList sempre que mudar
   useEffect(() => {
     localStorage.setItem("chatList", JSON.stringify(chatList));
   }, [chatList]);
 
-  // 3) Efeito de digitação do assistente
+  // 3) Carrega mensagens do localStorage sempre que sessionId mudar
+  useEffect(() => {
+    if (!sessionId) return;
+    const stored = getStoredMessages(sessionId);
+    if (stored.length > 0) {
+      setMessages(stored);
+    } else {
+      setMessages([
+        { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
+      ]);
+    }
+  }, [sessionId]);
+
+  // 4) Salva mensagens no localStorage sempre que elas mudam
+  useEffect(() => {
+    if (sessionId) {
+      storeMessages(sessionId, messages);
+    }
+  }, [messages, sessionId]);
+
+  // 5) Efeito de digitação do assistente
   useEffect(() => {
     if (!assistantFullText) return;
     setAssistantTypedText("");
@@ -87,7 +150,6 @@ function ChatApp() {
     }
 
     let index = 0;
-    // Ajuste o tempo para acelerar/diminuir a velocidade
     typingIntervalRef.current = setInterval(() => {
       if (index < assistantFullText.length) {
         setAssistantTypedText((prev) => prev + assistantFullText[index]);
@@ -97,7 +159,7 @@ function ChatApp() {
         clearInterval(typingIntervalRef.current);
         typingIntervalRef.current = null;
       }
-    }, 5); // 5 ms => bem rápido
+    }, 5); // digitação rápida
 
     return () => {
       if (typingIntervalRef.current) {
@@ -106,7 +168,7 @@ function ChatApp() {
     };
   }, [assistantFullText]);
 
-  // 4) Atualiza a última msg do assistente enquanto digita
+  // 6) Atualiza a última msg do assistente durante a digitação
   useEffect(() => {
     if (!assistantTypedText) return;
     setMessages((prev) => {
@@ -119,7 +181,7 @@ function ChatApp() {
     });
   }, [assistantTypedText]);
 
-  // 5) Auto-scroll ao atualizar messages
+  // 7) Auto-scroll sempre que messages muda
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -127,7 +189,7 @@ function ChatApp() {
     }
   }, [messages]);
 
-  // 6) Fecha sub-menu ao clicar fora
+  // 8) Fecha sub-menu ao clicar fora
   useEffect(() => {
     function handleClickOutside(e) {
       if (openMenuChatId && chatListPanelRef.current) {
@@ -148,16 +210,19 @@ function ChatApp() {
     setSessionId(newId);
     localStorage.setItem("sessionId", newId);
     updateURLWithChatId(newId);
-    addChatToListIfMissing(newId);
+
+    // Gera um nome único
+    const newChatName = getUniqueChatName(chatList);
+    const newChat = { id: newId, name: newChatName };
+    setChatList((prev) => [...prev, newChat]);
   }
 
   function addChatToListIfMissing(chatId) {
     const exists = chatList.some((chat) => chat.id === chatId);
     if (!exists) {
-      const newChat = {
-        id: chatId,
-        name: `Chat ${chatList.length + 1}`
-      };
+      // Gera nome único
+      const newChatName = getUniqueChatName(chatList);
+      const newChat = { id: chatId, name: newChatName };
       setChatList((prev) => [...prev, newChat]);
     }
   }
@@ -172,13 +237,6 @@ function ChatApp() {
     setSessionId(chatId);
     localStorage.setItem("sessionId", chatId);
     updateURLWithChatId(chatId);
-
-    setMessages([
-      {
-        role: "assistant",
-        content: "Olá, no que posso te ajudar hoje?"
-      }
-    ]);
     setOpenMenuChatId(null);
     setShowChatList(false);
   }
@@ -200,19 +258,23 @@ function ChatApp() {
   function handleDeleteChat(chatId) {
     if (!window.confirm("Deseja realmente excluir este chat?")) return;
     setChatList((prev) => prev.filter((chat) => chat.id !== chatId));
+    removeMessagesForChatId(chatId);
     setOpenMenuChatId(null);
+
+    // Se excluiu o chat atual, cria um novo e reseta msgs
     if (sessionId === chatId) {
       createNewSession();
       setMessages([
-        {
-          role: "assistant",
-          content: "Olá, no que posso te ajudar hoje?"
-        }
+        { role: "assistant", content: "Olá, no que posso te ajudar hoje?" }
       ]);
     }
   }
 
+  // Importante: ignoramos o sessionId que o servidor retorna
   async function handleSendMessage(customMsg) {
+    // Se o bot estiver digitando, não permite nova msg
+    if (isThinking) return;
+
     const textToSend = customMsg || inputValue.trim();
     if (!textToSend) return;
 
@@ -226,10 +288,7 @@ function ChatApp() {
     setShowThinking(true);
 
     try {
-      // Modo local
-      // const response = await fetch("http://localhost:4000/api/agent", {
-        // produção:
-        const response = await fetch("https://api.theway.altavistainvest.com.br/api/agent", {
+      const response = await fetch("http://localhost:4000/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -240,13 +299,9 @@ function ChatApp() {
       const data = await response.json();
       let botReply = data.reply || "Erro: sem resposta.";
 
-      if (data.sessionId) {
-        setSessionId(data.sessionId);
-        localStorage.setItem("sessionId", data.sessionId);
-        updateURLWithChatId(data.sessionId);
-        addChatToListIfMissing(data.sessionId);
-      }
+      // Não atualizamos sessionId local (ignoramos data.sessionId)
 
+      // Cria msg do assistente vazia, que será preenchida via digitação
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
       setAssistantFullText(botReply);
     } catch (err) {
@@ -261,11 +316,22 @@ function ChatApp() {
     }
   }
 
-  // Enter => envia a mensagem (sem Ctrl)
+  // Três botões iniciais se não houver msg de user
+  const hasUserMessage = messages.some((m) => m.role === "user");
+  const showInitialButtons = !hasUserMessage;
+
+  // Chamado pelos 3 botões de planejamento
+  function handlePlanningButtonClick(text) {
+    handleSendMessage(text);
+  }
+
+  // =============== OUTRAS FUNÇÕES ===============
   function handleKeyDown(e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSendMessage();
+      if (!isThinking) {
+        handleSendMessage();
+      }
     }
   }
 
@@ -294,29 +360,15 @@ function ChatApp() {
   }
 
   function handleEmailButton() {
-    handleSendMessage("Enviar por e-mail.");
-  }
-
-  // Botão "Quero fazer um planejamento financeiro"
-  function handlePlanningButtonClick() {
-    handleSendMessage("Quero fazer um planejamento financeiro.");
-    setShowPlanningButton(false);
-  }
-
-  // =========== LÓGICA PARA SUMIR COM O BOTÃO SE O CHAT ESTÁ "INICIADO" ==========
-  // Definimos "iniciado" se o chat tiver qualquer mensagem de role === 'user'
-  const hasUserMessage = messages.some((m) => m.role === "user");
-
-  // Se existir userMessage, some com o botão
-  useEffect(() => {
-    if (hasUserMessage) {
-      setShowPlanningButton(false);
+    if (!isThinking) {
+      handleSendMessage("Enviar por e-mail.");
     }
-  }, [hasUserMessage]);
+  }
 
+  // =============== RENDER ===============
   return (
     <div className={`container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
-      {/* HEADER fixo */}
+      {/* HEADER */}
       <div className="top-bar">
         <div className="top-bar-left">
           <img src={Logo} alt="logo" />
@@ -372,7 +424,7 @@ function ChatApp() {
         </div>
       </div>
 
-      {/* Painel de chats (lado direito) */}
+      {/* Painel de chats */}
       {showChatList && (
         <div className="chat-list-panel" ref={chatListPanelRef}>
           <h3>Meus Chats</h3>
@@ -394,7 +446,9 @@ function ChatApp() {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button onClick={() => handleRenameChat(chat.id)}>
-                        <FaPencilAlt style={{ color: isDarkMode ? "#fff" : "#333" }} />
+                        <FaPencilAlt
+                          style={{ color: isDarkMode ? "#fff" : "#333" }}
+                        />
                         Renomear
                       </button>
                       <button onClick={() => handleDeleteChat(chat.id)}>
@@ -413,7 +467,7 @@ function ChatApp() {
         </div>
       )}
 
-      {/* MAIN (rolável via .messages-feed) */}
+      {/* MAIN */}
       <div className="main">
         <div className="messages-feed" ref={messagesContainerRef}>
           {messages.map((msg, index) => {
@@ -437,7 +491,7 @@ function ChatApp() {
               </div>
             );
           })}
-          {/* "Digitando..." */}
+          {/* Digitando... */}
           {showThinking && (
             <div className="message assistant-message fade-in">
               <div className="typing-indicator">
@@ -452,36 +506,41 @@ function ChatApp() {
 
       {/* FOOTER */}
       <div className="bottom-input">
-        {/* Se showPlanningButton => mostra só o botão. Se false => mostra input */}
-        {showPlanningButton ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-              position: "relative",
-              zIndex: 2,
-              margin: "1rem 0"
-            }}
-          >
-            <button
-              onClick={handlePlanningButtonClick}
-              style={{
-                background: "#d6c3a9",
-                border: "none",
-                borderRadius: "4px",
-                padding: "0.75rem 1.5rem",
-                cursor: "pointer",
-                fontWeight: "bold",
-                color: "#333",
-                fontSize: "1rem",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                transition: "background 0.2s"
-              }}
-            >
-              Quero fazer um planejamento financeiro
-            </button>
-          </div>
+      {showInitialButtons ? (
+  <div className="initial-buttons-container">
+    <button
+      className="initial-button"
+      onClick={() =>
+        handlePlanningButtonClick(
+          "Quero fazer um Planejamento Financeiro passo a passo."
+        )
+      }
+    >
+      Quero fazer um Planejamento Financeiro passo a passo.
+    </button>
+
+    <button
+      className="initial-button"
+      onClick={() =>
+        handlePlanningButtonClick(
+          "Quero fazer um Planejamento Financeiro no formato estruturado de uma vez."
+        )
+      }
+    >
+      Quero fazer um Planejamento Financeiro no formato estruturado de uma vez.
+    </button>
+
+    <button
+      className="initial-button"
+      onClick={() =>
+        handlePlanningButtonClick(
+          "Quero fazer um Planejamento Financeiro em conversa livre."
+        )
+      }
+    >
+      Quero fazer um Planejamento Financeiro em conversa livre.
+    </button>
+  </div>
         ) : (
           <>
             <div className="bottom-input-bg" />
@@ -494,7 +553,12 @@ function ChatApp() {
                 onKeyDown={handleKeyDown}
                 onInput={handleInput}
                 rows={1}
-                style={{ flex: 0.7, marginRight: "0.5rem" }}
+                disabled={isThinking} // desabilita se o bot estiver digitando
+                style={{
+                  flex: 0.7,
+                  marginRight: "0.5rem",
+                  cursor: isThinking ? "not-allowed" : "text"
+                }}
               />
               <div
                 className="input-actions"
@@ -503,17 +567,21 @@ function ChatApp() {
                 <FaEnvelope
                   onClick={handleEmailButton}
                   style={{
-                    cursor: "pointer",
+                    cursor: isThinking ? "not-allowed" : "pointer",
                     fontSize: "1.2rem",
                     color: isDarkMode ? "#ddd" : "#333"
                   }}
                 />
                 <FaArrowUp
                   className="send-icon"
-                  onClick={() => handleSendMessage()}
+                  onClick={() => {
+                    if (!isThinking) {
+                      handleSendMessage();
+                    }
+                  }}
                   style={{
                     fontSize: "1.2rem",
-                    cursor: "pointer",
+                    cursor: isThinking ? "not-allowed" : "pointer",
                     color: isDarkMode ? "#ddd" : "#333"
                   }}
                 />

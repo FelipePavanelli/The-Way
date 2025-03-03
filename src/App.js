@@ -1,21 +1,24 @@
-// src/App.js
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import ChatApp from "./ChatApp.js";
+import ChatApp from "./ChatApp"; // Este é o seu componente de chat
 
 function App() {
-  const { isLoading } = useAuth0();
+  const { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
+
+  useEffect(() => {
+    // Se não estiver carregando e não estiver autenticado,
+    // faz login imediatamente
+    if (!isLoading && !isAuthenticated) {
+      loginWithRedirect();
+    }
+  }, [isLoading, isAuthenticated, loginWithRedirect]);
 
   if (isLoading) {
-    return <div style={{ color: "#000", textAlign: "center", marginTop: "2rem" }}>Carregando...</div>;
+    return <div>Carregando...</div>;
   }
 
-  // Simplesmente renderizamos o ChatApp
-  return (
-    <div style={{ position: "relative" }}>
-      <ChatApp />
-    </div>
-  );
+  // Se chegou aqui, significa que está autenticado
+  return <ChatApp />;
 }
 
 export default App;

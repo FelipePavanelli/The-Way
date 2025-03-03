@@ -1,13 +1,11 @@
-// src/index.js
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Auth0Provider } from "@auth0/auth0-react";
-import App from "./App.js";
+import App from "./App";
 import "./index.css";
 
-// Substitua pelos valores do seu app no Painel da Auth0:
-const domain = "altavista.us.auth0.com";    // Ex: "meu-tenant.us.auth0.com"
-const clientId = "G2210oBgOBElx3xNhosej3iUhaIYCGaK";          // Copie do seu app no Auth0
+const domain = "altavista.us.auth0.com";
+const clientId = "G2210oBgOBElx3xNhosej3iUhaIYCGaK";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
