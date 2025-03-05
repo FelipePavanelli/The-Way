@@ -2,6 +2,8 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
+
+
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
     "@babel/runtime": "^7.26.9",
@@ -26,6 +28,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "server": "node Server.js",          
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

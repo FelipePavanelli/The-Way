@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import ChatApp from "./ChatApp"; // seu componente de chat
+import ChatApp from "./ChatApp.js"; // seu componente de chat
 import Logo from "./assets/logo.svg";
 
 function App() {
