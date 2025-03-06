@@ -1,7 +1,7 @@
 // server.js
 const express = require("express");
 const cors = require("cors");
-const fetch = require("node-fetch");
+const fetch = require("node-fetch").default;
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
@@ -64,7 +64,7 @@ app.post("/api/agent", async (req, res) => {
 
     let reply = data.reply || "Erro: sem resposta.";
     // Substituições
-    reply = reply.replace("{data_atual}", new Date().toLocaleDateString("pt-BR"));
+    reply = reply.replace("{data_atual}", new Date().toLocaleDring("pt-BR"));
     reply = reply.replace(/\bundefined\b/g, "");
 
     // Logar no console
@@ -111,7 +111,7 @@ app.post("/api/sendEmail", async (req, res) => {
     }
 
     let reply = data.reply || "Erro: sem resposta.";
-    reply = reply.replace("{data_atual}", new Date().toLocaleDateString("pt-BR"));
+    reply = reply.replace("{data_atual}", new Date().toLocaleDring("pt-BR"));
     reply = reply.replace(/\bundefined\b/g, "");
 
     return res.json({ reply, sessionId: finalSessionId });
