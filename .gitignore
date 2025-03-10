@@ -24,6 +24,6 @@ yarn-error.log*
 
 /node_modules/
 
-/chat/my-app/src/.env
+/Python Server/.env
 /src/Server.js
 Server.js

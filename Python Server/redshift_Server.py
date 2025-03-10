@@ -3,7 +3,10 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2 import sql
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 # Definir o token fixo
 BEARER_TOKEN = "seu_token_fixo_aqui"
 
@@ -29,11 +32,11 @@ class QuerySQL(BaseModel):
 def conectar_redshift():
     try:
         conn = psycopg2.connect(
-            dbname="dev",
-            user="av-admin",
-            password="Pacheco25!",
-            host="av-redshift-cluster-development.cngeaifopw3u.us-east-1.redshift.amazonaws.com",
-            port="5439"
+            dbname=os.getenv("dbname"),
+            user=os.getenv("user"),
+            password=os.getenv("password"),
+            host=os.getenv("host"),
+            port=os.getenv("port")
         )
         return conn
     except Exception as e:
