@@ -41,7 +41,6 @@ function getUserInitial(user) {
 
 function getInitialMessage(user) {
   if (user) {
-    // const userName = user.name || user.nickname || user.email;
     return `Como posso te ajudar hoje?`;
   }
   return "Como posso te ajudar hoje?";
@@ -56,7 +55,6 @@ function ChatApp() {
   const [chatList, setChatList] = useState(() => {
     const stored = localStorage.getItem(`chatList_${user?.sub || user?.email || "default"}`);
     const parsed = stored ? JSON.parse(stored) : [];
-    // Remove duplicatas de chatList baseado no ID
     const uniqueChats = Array.from(new Map(parsed.map(item => [item.id, item])).values());
     return uniqueChats;
   });
@@ -73,13 +71,13 @@ function ChatApp() {
   const [showThinking, setShowThinking] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
-  const [popupInput, setPopupInput] = useState(""); // Para o input de renomear chat
+  const [popupInput, setPopupInput] = useState("");
   const [popupAction, setPopupAction] = useState(() => {});
 
   const textareaRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const chatListPanelRef = useRef(null);
-  const popupRef = useRef(null); // Referência para o popup
+  const popupRef = useRef(null);
 
   const getStoredMessages = useCallback((sid) => {
     const raw = localStorage.getItem(`messagesBySession_${user?.sub || user?.email || "default"}`);
@@ -105,7 +103,6 @@ function ChatApp() {
     const newChat = { id: newId, name: newChatName };
     setChatList((prev) => {
       const updatedList = [...prev, newChat];
-      // Remove duplicatas baseado no ID
       return Array.from(new Map(updatedList.map(item => [item.id, item])).values());
     });
   }, [chatList, user]);
@@ -117,7 +114,6 @@ function ChatApp() {
       const newChat = { id: chatId, name: newChatName };
       setChatList((prev) => {
         const updatedList = [...prev, newChat];
-        // Remove duplicatas baseado no ID
         return Array.from(new Map(updatedList.map(item => [item.id, item])).values());
       });
     }
@@ -131,7 +127,6 @@ function ChatApp() {
     localStorage.setItem(`messagesBySession_${user?.sub || user?.email || "default"}`, JSON.stringify(parsed));
   }, [user]);
 
-  // 1) Se não houver sessionId, cria ou seleciona o primeiro chat
   useEffect(() => {
     if (!sessionId) {
       if (chatList.length > 0) {
@@ -148,12 +143,10 @@ function ChatApp() {
     }
   }, [sessionId, chatList, user, addChatToListIfMissing, createNewSession]);
 
-  // 2) Salva chatList sempre que mudar
   useEffect(() => {
     localStorage.setItem(`chatList_${user?.sub || user?.email || "default"}`, JSON.stringify(chatList));
   }, [chatList, user]);
 
-  // 3) Carrega mensagens do localStorage sempre que sessionId mudar
   useEffect(() => {
     if (!sessionId) return;
     const stored = getStoredMessages(sessionId);
@@ -164,83 +157,60 @@ function ChatApp() {
     }
   }, [sessionId, user, getStoredMessages]);
 
-  // 4) Salva mensagens no localStorage sempre que elas mudam
   useEffect(() => {
     if (sessionId) {
       storeMessages(sessionId, messages);
     }
   }, [messages, sessionId, user, storeMessages]);
 
-  // 5) Auto-scroll sempre que messages muda
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // 6) Fecha sub-menu de chat ao clicar fora, corrigido para verificar se o elemento existe e lidar com hot-reload
   useEffect(() => {
     let timeoutId = null;
-
     if (openMenuChatId && chatListPanelRef.current) {
       function handleClickOutside(e) {
         if (!chatListPanelRef.current.contains(e.target)) {
           setOpenMenuChatId(null);
         }
       }
-
-      // Adiciona o listener após um pequeno delay para garantir que o elemento esteja no DOM
       timeoutId = setTimeout(() => {
         document.addEventListener("mousedown", handleClickOutside);
       }, 0);
-
       return () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
+        if (timeoutId) clearTimeout(timeoutId);
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
-
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [openMenuChatId]);
 
-  // 7) Fecha menu de chats (hambúrguer) ao clicar fora, corrigido para verificar se o elemento existe
   useEffect(() => {
     let timeoutId = null;
-
     if (showChatList && chatListPanelRef.current) {
       function handleClickOutside(e) {
         if (!chatListPanelRef.current.contains(e.target)) {
           setShowChatList(false);
         }
       }
-
-      // Adiciona o listener após um pequeno delay para garantir que o elemento esteja no DOM
       timeoutId = setTimeout(() => {
         document.addEventListener("mousedown", handleClickOutside);
       }, 0);
-
       return () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
+        if (timeoutId) clearTimeout(timeoutId);
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
-
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [showChatList]);
 
-  // 8) Fecha menu de perfil ao clicar fora
   useEffect(() => {
     if (showProfileMenu) {
       function handleClickOutsideProfile(e) {
@@ -254,7 +224,6 @@ function ChatApp() {
     }
   }, [showProfileMenu]);
 
-  // 9) Controle de rolagem para mostrar a seta de voltar ao fim
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   useEffect(() => {
     const handleScroll = () => {
@@ -271,44 +240,31 @@ function ChatApp() {
     }
   }, []);
 
-  // 10) Fechar popup ao clicar fora, com handleClickOutside definido no escopo do componente
   const handleClickOutside = useCallback((e) => {
     if (popupRef.current && !popupRef.current.contains(e.target)) {
       setShowPopup(false);
-      setPopupInput(""); // Reseta o input ao fechar
+      setPopupInput("");
     }
   }, []);
 
   useEffect(() => {
     let timeoutId = null;
-
     if (showPopup) {
-      // Verifica se popupRef.current existe antes de adicionar o listener
       function checkAndAddListener() {
         if (popupRef.current) {
           document.addEventListener("mousedown", handleClickOutside);
         } else {
-          // Se o elemento ainda não existir, tenta novamente após um pequeno delay
           timeoutId = setTimeout(checkAndAddListener, 50);
         }
       }
-
       checkAndAddListener();
-
       return () => {
-        // Limpa o listener e o timeout
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
+        if (timeoutId) clearTimeout(timeoutId);
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
-
-    // Limpa o timeout se showPopup for false
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [showPopup, handleClickOutside]);
 
@@ -329,14 +285,14 @@ function ChatApp() {
   function handleRenameChat(chatId) {
     setShowPopup(true);
     setPopupMessage("Qual o nome deseja dar ao Chat?");
-    setPopupInput(""); // Reseta o input
+    setPopupInput("");
     setPopupAction(() => () => {
       if (popupInput.trim()) {
         setChatList((prev) =>
           prev.map((chat) => (chat.id === chatId ? { ...chat, name: popupInput.trim() } : chat))
         );
       }
-      setShowPopup(false); // Fecha o popup após a ação
+      setShowPopup(false);
       setOpenMenuChatId(null);
     });
   }
@@ -349,13 +305,12 @@ function ChatApp() {
         setChatList((prev) => prev.filter((chat) => chat.id !== chatId));
         removeMessagesForChatId(chatId);
         setOpenMenuChatId(null);
-
         if (sessionId === chatId) {
           setSessionId(null);
           setMessages([]);
         }
       }
-      setShowPopup(false); // Fecha o popup após a ação
+      setShowPopup(false);
     });
   }
 
@@ -388,7 +343,6 @@ function ChatApp() {
       });
       const data = await response.json();
       let botReply = data.reply || "Erro: sem resposta.";
-
       setMessages((prev) => [...prev, { role: "assistant", content: botReply }]);
     } catch (err) {
       console.error("Erro ao chamar /api/agent:", err);
@@ -410,7 +364,7 @@ function ChatApp() {
   }
 
   function handleKeyDown(e) {
-    if (e.key === "Enter" && !isThinking) {
+    if (e.key === "Enter" && !e.shiftKey && !isThinking) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -563,7 +517,7 @@ function ChatApp() {
           <h3>Meus Chats</h3>
           <ul>
             {chatList.map((chat) => (
-              <li key={chat.id}> {/* Usando chat.id como chave única */}
+              <li key={chat.id}>
                 <div className="chat-item" onClick={() => handleSelectChat(chat.id)}>
                   <span>{chat.name}</span>
                   <div className="chat-item-menu" onClick={(e) => toggleMenu(chat.id, e)}>
@@ -664,11 +618,9 @@ function ChatApp() {
                 onKeyDown={handleKeyDown}
                 onInput={handleInput}
                 rows={1}
-                disabled={isThinking}
                 style={{
                   flex: 0.7,
                   marginRight: "0.5rem",
-                  cursor: isThinking ? "not-allowed" : "text",
                   fontFamily: '"Inter", sans-serif',
                   fontSize: "1rem",
                   fontWeight: 400
@@ -696,7 +648,7 @@ function ChatApp() {
                       justifyContent: "center",
                       color: isDarkMode ? "#cecccc" : "#333",
                       fontSize: "1.2rem",
-                      cursor: "default" // Não clicável
+                      cursor: "default"
                     }}
                     aria-label="Aguardando processamento (não clicável)"
                   >
@@ -742,7 +694,7 @@ function ChatApp() {
                 className="popup-button confirm"
                 onClick={() => {
                   popupAction();
-                  setShowPopup(false); // Fecha o popup imediatamente após a ação
+                  setShowPopup(false);
                   setPopupInput("");
                   setPopupAction(() => {});
                 }}
