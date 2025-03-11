@@ -288,9 +288,17 @@ function ChatApp() {
     setPopupInput("");
     setPopupAction(() => () => {
       if (popupInput.trim()) {
-        setChatList((prev) =>
-          prev.map((chat) => (chat.id === chatId ? { ...chat, name: popupInput.trim() } : chat))
-        );
+        setChatList((prev) => {
+          const updatedList = prev.map((chat) =>
+            chat.id === chatId ? { ...chat, name: popupInput.trim() } : chat
+          );
+          // Atualiza o localStorage imediatamente após a mudança
+          localStorage.setItem(
+            `chatList_${user?.sub || user?.email || "default"}`,
+            JSON.stringify(updatedList)
+          );
+          return updatedList;
+        });
       }
       setShowPopup(false);
       setOpenMenuChatId(null);
@@ -570,7 +578,7 @@ function ChatApp() {
             onClick={scrollToBottom}
             style={{
               position: "fixed",
-              bottom: "80px",
+              bottom: "120px", // Ajustado de 80px para 120px
               right: "20px",
               background: isDarkMode ? "#4d4d4d" : "#d6c3a9",
               border: "none",
