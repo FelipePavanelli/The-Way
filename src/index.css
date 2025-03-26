@@ -257,33 +257,63 @@ html, body {
   }
 }
 
-/* Typing Indicator */
+/* Typing Indicator com texto e pontos pulando */
 @keyframes typingIndicator {
   0% { transform: translateY(0); }
   20% { transform: translateY(-0.3rem); }
   40% { transform: translateY(0); }
   100% { transform: translateY(0); }
 }
+
+@keyframes fadeInOut {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
 .typing-indicator {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  white-space: nowrap;
+  gap: 0.2rem;
+}
+
+.typing-text {
+  display: inline;
+  font-style: italic;
+  animation: fadeInOut 2s infinite ease-in-out;
+  margin-right: 0.1rem;
+}
+
+.typing-indicator .dots-container {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
 }
-.typing-indicator span {
-  display: block;
+
+.typing-indicator .dot {
+  display: inline-block;
   width: 0.3rem;
   height: 0.3rem;
   background: #333;
   border-radius: 50%;
   animation: typingIndicator 1.4s infinite ease-in-out;
 }
-.typing-indicator span:nth-child(2) {
+
+.typing-indicator .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-indicator .dot:nth-child(2) {
   animation-delay: 0.2s;
 }
-.typing-indicator span:nth-child(3) {
+
+.typing-indicator .dot:nth-child(3) {
   animation-delay: 0.4s;
 }
-.dark-mode .typing-indicator span {
+
+.dark-mode .typing-indicator .dot {
   background: #cecccc;
 }
 

@@ -21,6 +21,16 @@ import remarkGfm from "remark-gfm";
 import Logo from "./assets/logo.svg";
 import "./index.css";
 
+// Função auxiliar para verificar se um elemento contém outro de forma segura
+function safeContains(element, target) {
+  try {
+    return element && typeof element.contains === 'function' && element.contains(target);
+  } catch (error) {
+    console.error("Erro ao verificar contains:", error);
+    return false;
+  }
+}
+
 function getUniqueChatName(chatList) {
   let maxNumber = 0;
   chatList.forEach((chat) => {
@@ -72,12 +82,44 @@ function ChatApp() {
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
   const [popupInput, setPopupInput] = useState("");
-  const [popupAction, setPopupAction] = useState(() => {});
+  
+  // Estado adicional para rastrear o chat que está sendo renomeado
+  const [renamingChatId, setRenamingChatId] = useState(null);
+  const [deletingChatId, setDeletingChatId] = useState(null);
+  const [popupType, setPopupType] = useState(""); // "rename", "delete", "email", "logout"
+  
+  // Novo estado para controlar o índice da frase de pensamento
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  
+  // Array de frases de pensamento
+  const thinkingPhrases = [
+    "Pensando...",
+    "Analisando sua mensagem...",
+    "Processando informações...",
+    "Elaborando resposta...",
+    "Considerando opções...",
+    "Avaliando alternativas...",
+    "Organizando dados...",
+    "Calculando resultados..."
+  ];
 
   const textareaRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const chatListPanelRef = useRef(null);
   const popupRef = useRef(null);
+
+  // Efeito para alternar as frases de pensamento
+  useEffect(() => {
+    let interval;
+    if (showThinking) {
+      interval = setInterval(() => {
+        setPhraseIndex((prevIndex) => (prevIndex + 1) % thinkingPhrases.length);
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showThinking, thinkingPhrases.length]);
 
   const getStoredMessages = useCallback((sid) => {
     const raw = localStorage.getItem(`messagesBySession_${user?.sub || user?.email || "default"}`);
@@ -127,6 +169,15 @@ function ChatApp() {
     localStorage.setItem(`messagesBySession_${user?.sub || user?.email || "default"}`, JSON.stringify(parsed));
   }, [user]);
 
+  const handleClickOutside = useCallback((e) => {
+    if (!safeContains(popupRef.current, e.target)) {
+      setShowPopup(false);
+      setPopupInput("");
+      setRenamingChatId(null);
+      setDeletingChatId(null);
+    }
+  }, []);
+
   useEffect(() => {
     if (!sessionId) {
       if (chatList.length > 0) {
@@ -161,7 +212,7 @@ function ChatApp() {
     if (sessionId) {
       storeMessages(sessionId, messages);
     }
-  }, [messages, sessionId, user, storeMessages]);
+  }, [messages, sessionId, storeMessages]);
 
   useEffect(() => {
     if (messagesContainerRef.current) {
@@ -173,7 +224,7 @@ function ChatApp() {
     let timeoutId = null;
     if (openMenuChatId && chatListPanelRef.current) {
       function handleClickOutside(e) {
-        if (!chatListPanelRef.current.contains(e.target)) {
+        if (!safeContains(chatListPanelRef.current, e.target)) {
           setOpenMenuChatId(null);
         }
       }
@@ -194,7 +245,7 @@ function ChatApp() {
     let timeoutId = null;
     if (showChatList && chatListPanelRef.current) {
       function handleClickOutside(e) {
-        if (!chatListPanelRef.current.contains(e.target)) {
+        if (!safeContains(chatListPanelRef.current, e.target)) {
           setShowChatList(false);
         }
       }
@@ -215,7 +266,7 @@ function ChatApp() {
     if (showProfileMenu) {
       function handleClickOutsideProfile(e) {
         const menuEl = document.getElementById("profile-menu-dropdown");
-        if (menuEl && !menuEl.contains(e.target)) {
+        if (menuEl && !safeContains(menuEl, e.target)) {
           setShowProfileMenu(false);
         }
       }
@@ -237,13 +288,6 @@ function ChatApp() {
     if (container) {
       container.addEventListener("scroll", handleScroll);
       return () => container.removeEventListener("scroll", handleScroll);
-    }
-  }, []);
-
-  const handleClickOutside = useCallback((e) => {
-    if (popupRef.current && !popupRef.current.contains(e.target)) {
-      setShowPopup(false);
-      setPopupInput("");
     }
   }, []);
 
@@ -283,43 +327,98 @@ function ChatApp() {
   }
 
   function handleRenameChat(chatId) {
-    setShowPopup(true);
+    console.log("Iniciando renomeação para chatId:", chatId);
+    setRenamingChatId(chatId);
+    setPopupType("rename");
     setPopupMessage("Qual o nome deseja dar ao Chat?");
     setPopupInput("");
-    setPopupAction(() => () => {
-      if (popupInput.trim()) {
-        setChatList((prev) => {
-          const updatedList = prev.map((chat) =>
-            chat.id === chatId ? { ...chat, name: popupInput.trim() } : chat
-          );
-          // Atualiza o localStorage imediatamente após a mudança
-          localStorage.setItem(
-            `chatList_${user?.sub || user?.email || "default"}`,
-            JSON.stringify(updatedList)
-          );
-          return updatedList;
-        });
+    setShowPopup(true);
+  }
+
+  function confirmRename() {
+    console.log("Confirmando renomeação para chatId:", renamingChatId);
+    
+    if (renamingChatId && popupInput && popupInput.trim()) {
+      const newName = popupInput.trim();
+      console.log("Novo nome:", newName);
+      
+      // Criar nova lista com o nome atualizado
+      const updatedList = chatList.map(chat => 
+        chat.id === renamingChatId ? {...chat, name: newName} : chat
+      );
+      
+      console.log("Lista atualizada:", updatedList);
+      
+      // Salvar no localStorage primeiro
+      try {
+        localStorage.setItem(
+          `chatList_${user?.sub || user?.email || "default"}`,
+          JSON.stringify(updatedList)
+        );
+        console.log("Salvo no localStorage");
+      } catch (err) {
+        console.error("Erro ao salvar no localStorage:", err);
       }
-      setShowPopup(false);
-      setOpenMenuChatId(null);
-    });
+      
+      // Atualizar o estado
+      setChatList(updatedList);
+      console.log("Estado atualizado");
+    }
+    
+    // Limpar
+    setRenamingChatId(null);
+    setShowPopup(false);
+    setPopupInput("");
+    setOpenMenuChatId(null);
   }
 
   function handleDeleteChat(chatId) {
-    setShowPopup(true);
+    setDeletingChatId(chatId);
+    setPopupType("delete");
     setPopupMessage("Deseja realmente excluir este chat?");
-    setPopupAction(() => () => {
+    setShowPopup(true);
+  }
+  
+  function confirmDelete() {
+    if (deletingChatId) {
       if (window.confirm("Confirme a exclusão deste chat?")) {
-        setChatList((prev) => prev.filter((chat) => chat.id !== chatId));
-        removeMessagesForChatId(chatId);
-        setOpenMenuChatId(null);
-        if (sessionId === chatId) {
+        setChatList((prev) => prev.filter((chat) => chat.id !== deletingChatId));
+        removeMessagesForChatId(deletingChatId);
+        
+        if (sessionId === deletingChatId) {
           setSessionId(null);
           setMessages([]);
         }
       }
-      setShowPopup(false);
-    });
+    }
+    
+    setDeletingChatId(null);
+    setShowPopup(false);
+    setOpenMenuChatId(null);
+  }
+
+  function handleLogout() {
+    setPopupType("logout");
+    setPopupMessage("Deseja realmente sair?");
+    setShowPopup(true);
+  }
+  
+  function confirmLogout() {
+    logout({ returnTo: window.location.origin });
+    setShowPopup(false);
+  }
+
+  function handleEmailButton() {
+    if (!isThinking) {
+      setPopupType("email");
+      setPopupMessage("Deseja receber por e-mail?");
+      setShowPopup(true);
+    }
+  }
+  
+  function confirmEmail() {
+    handleSendMessage("Enviar por e-mail.");
+    setShowPopup(false);
   }
 
   async function handleSendMessage(customMsg) {
@@ -389,15 +488,6 @@ function ChatApp() {
     }
   }
 
-  function handleLogout() {
-    setShowPopup(true);
-    setPopupMessage("Deseja realmente sair?");
-    setPopupAction(() => () => {
-      logout({ returnTo: window.location.origin });
-      setShowPopup(false);
-    });
-  }
-
   function toggleDarkMode() {
     setIsDarkMode((prev) => !prev);
   }
@@ -405,17 +495,6 @@ function ChatApp() {
   function toggleMenu(chatId, e) {
     e.stopPropagation();
     setOpenMenuChatId((prev) => (prev === chatId ? null : chatId));
-  }
-
-  function handleEmailButton() {
-    if (!isThinking) {
-      setShowPopup(true);
-      setPopupMessage("Deseja receber por e-mail?");
-      setPopupAction(() => () => {
-        handleSendMessage("Enviar por e-mail.");
-        setShowPopup(false);
-      });
-    }
   }
 
   function scrollToBottom() {
@@ -432,7 +511,7 @@ function ChatApp() {
           <img src={Logo} alt="logo" />
         </div>
         <div className="top-bar-center">
-          <span className="the-way-label">The Way</span>
+          <span className="the-way-label">The Way - Planejador Financeiro</span>
         </div>
         <div className="top-bar-right">
           <button
@@ -521,7 +600,10 @@ function ChatApp() {
 
       {/* Painel de chats */}
       {showChatList && (
-        <div className="chat-list-panel" ref={chatListPanelRef}>
+        <div className="chat-list-panel" ref={chatListPanelRef} style={{
+          maxHeight: "70vh",
+          overflowY: "auto"
+        }}>
           <h3>Meus Chats</h3>
           <ul>
             {chatList.map((chat) => (
@@ -566,9 +648,12 @@ function ChatApp() {
           {showThinking && (
             <div className="message assistant-message fade-in">
               <div className="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span className="typing-text">{thinkingPhrases[phraseIndex]}</span>
+                <div className="dots-container">
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                </div>
               </div>
             </div>
           )}
@@ -578,7 +663,7 @@ function ChatApp() {
             onClick={scrollToBottom}
             style={{
               position: "fixed",
-              bottom: "120px", // Ajustado de 80px para 120px
+              bottom: "120px",
               right: "20px",
               background: isDarkMode ? "#4d4d4d" : "#d6c3a9",
               border: "none",
@@ -600,18 +685,12 @@ function ChatApp() {
         )}
       </div>
 
-      {/* FOOTER com botão Stop */}
+      {/* FOOTER com botão único */}
       <div className="bottom-input">
         {showInitialButtons ? (
           <div className="initial-buttons-container">
-            <button className="initial-button" onClick={() => handlePlanningButtonClick("Quero fazer um Planejamento Financeiro passo a passo.")}>
-              Quero fazer um Planejamento Financeiro passo a passo.
-            </button>
-            <button className="initial-button" onClick={() => handlePlanningButtonClick("Quero fazer um Planejamento Financeiro no formato estruturado de uma vez.")}>
-              Quero fazer um Planejamento Financeiro no formato estruturado de uma vez.
-            </button>
-            <button className="initial-button" onClick={() => handlePlanningButtonClick("Quero fazer um Planejamento Financeiro em conversa livre.")}>
-              Quero fazer um Planejamento Financeiro em conversa livre.
+            <button className="initial-button" onClick={() => handlePlanningButtonClick("Quero fazer um Planejamento Financeiro.")}>
+              Quero fazer um Planejamento Financeiro
             </button>
           </div>
         ) : (
@@ -684,7 +763,7 @@ function ChatApp() {
         <div className="popup-overlay" onClick={() => { setShowPopup(false); setPopupInput(""); }}>
           <div id="custom-popup" ref={popupRef} className="custom-popup" onClick={(e) => e.stopPropagation()}>
             <p>{popupMessage}</p>
-            {popupMessage === "Qual o nome deseja dar ao Chat?" ? (
+            {popupType === "rename" && (
               <input
                 type="text"
                 value={popupInput}
@@ -693,33 +772,43 @@ function ChatApp() {
                 className="popup-input"
                 autoFocus
               />
-            ) : null}
+            )}
             <div className="popup-actions">
-              <button className="popup-button" onClick={() => { setShowPopup(false); setPopupInput(""); setPopupAction(() => {}); }}>
-                Cancelar
-              </button>
-              <button
-                className="popup-button confirm"
-                onClick={() => {
-                  popupAction();
-                  setShowPopup(false);
-                  setPopupInput("");
-                  setPopupAction(() => {});
-                }}
-                disabled={popupMessage === "Qual o nome deseja dar ao Chat?" && !popupInput.trim()}
-              >
-                {popupMessage === "Deseja receber por e-mail?" ? "Show me The Way" : "Confirmar"}
-              </button>
-            </div>
+              <button className="popup-button" onClick={() => { 
+                setShowPopup(false); 
+                setPopupInput(""); 
+                setRenamingChatId(null);
+                setDeletingChatId(null);
+              }}>
+              Cancelar
+            </button>
+            <button
+              className="popup-button confirm"
+              onClick={() => {
+                if (popupType === "rename") {
+                  confirmRename();
+                } else if (popupType === "delete") {
+                  confirmDelete();
+                } else if (popupType === "logout") {
+                  confirmLogout();
+                } else if (popupType === "email") {
+                  confirmEmail();
+                }
+              }}
+              disabled={popupType === "rename" && (!popupInput || !popupInput.trim())}
+            >
+              {popupType === "email" ? "Show me The Way" : "Confirmar"}
+            </button>
           </div>
         </div>
-      )}
-
-      <div className="footer-text" style={{ fontFamily: '"Montserrat", sans-serif', fontSize: "0.6rem" }}>
-        Todos os direitos reservados a Alta Vista Investimentos - V1.0.6
       </div>
+    )}
+
+    <div className="footer-text" style={{ fontFamily: '"Montserrat", sans-serif', fontSize: "0.6rem" }}>
+      Powered By Alta Vista Investimentos - V1.1.7
     </div>
-  );
+  </div>
+);
 }
 
 export default ChatApp;
