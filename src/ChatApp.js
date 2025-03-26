@@ -381,14 +381,12 @@ function ChatApp() {
   
   function confirmDelete() {
     if (deletingChatId) {
-      if (window.confirm("Confirme a exclusão deste chat?")) {
-        setChatList((prev) => prev.filter((chat) => chat.id !== deletingChatId));
-        removeMessagesForChatId(deletingChatId);
-        
-        if (sessionId === deletingChatId) {
-          setSessionId(null);
-          setMessages([]);
-        }
+      setChatList((prev) => prev.filter((chat) => chat.id !== deletingChatId));
+      removeMessagesForChatId(deletingChatId);
+      
+      if (sessionId === deletingChatId) {
+        setSessionId(null);
+        setMessages([]);
       }
     }
     
