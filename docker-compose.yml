@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    image: laravel-app
+    container_name: laravel-app-theway
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/php.ini
+    environment:
+      - COMPOSER_HOME=/composer
+      - COMPOSER_ALLOW_SUPERUSER=1
+      - APP_ENV=local
+      - APP_KEY=base64:V9lMOMKFhL7IdZ9/3KcjtT24SIqRw+Oz7ObmYy9YvJQ=
+    networks:
+      - laravel-network
+
+  webserver:
+    image: nginx:alpine
+    container_name: webserver-theway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - laravel-network
+    depends_on:
+      - app
+
+  db:
+    image: postgres:alpine
+    container_name: postgres-theway
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpassword
+      POSTGRES_DB: pgdatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - laravel-network
+
+  redis:
+    image: redis:alpine
+    container_name: redis-theway
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - laravel-network
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: mailpit-theway
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+    networks:
+      - laravel-network
+
+  node:
+    image: node:20-alpine
+    container_name: node-theway
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - laravel-network
+    tty: true
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-theway
+    depends_on:
+      - webserver
+    ports:
+      - "4040:4040"
+    command: http host.docker.internal:80
+    environment:
+      - NGROK_AUTHTOKEN=2vmtEoLTcKMSNXyeGigA0xSy3eF_7njdTpeKTbdehMrYTM3it
+    restart: unless-stopped
+
+networks:
+  laravel-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
