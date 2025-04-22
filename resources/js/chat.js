@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.data) {
                     addMessage('assistant', response.data);
                 }
-                scrollToBottom();
+               
 
         } catch (error) {
             removeTypingIndicator();
