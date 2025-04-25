@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DataExtractController;
+use App\Http\Controllers\ClientReportController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -16,3 +18,4 @@ use App\Http\Controllers\DataExtractController;
 */
 
 Route::get('/data-extract/{session_id}', [DataExtractController::class, 'show']);
+Route::get('/client-reports/{session_id}', [ClientReportController::class, 'show']);
