@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const messagesContainer = document.getElementById('messages-container');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
-    const emailButton = document.getElementById('email-button');
     const initialButtons = document.getElementById('initial-buttons');
     const messageInputContainer = document.getElementById('message-input-container');
     const suggestionButtons = document.querySelectorAll('.suggestion-button');
@@ -28,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupEventListeners() {
         // Chat
         sendButton.addEventListener('click', sendUserMessage);
-        emailButton.addEventListener('click', handleEmailButton);
         messageInput.addEventListener('keydown', handleTextareaKeydown);
         messageInput.addEventListener('input', autoResizeTextarea);
 
@@ -95,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.data) {
                     addMessage('assistant', response.data);
                 }
-               
+
 
         } catch (error) {
             removeTypingIndicator();
@@ -219,11 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
             sendUserMessage();
         }
     }
-
-    function handleEmailButton() {
-        alert("Funcionalidade de e-mail seria implementada aqui");
-    }
-
 
     // Funções de Scroll
     function checkScrollPosition() {
