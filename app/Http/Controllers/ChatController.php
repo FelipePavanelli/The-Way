@@ -29,7 +29,7 @@ class ChatController extends Controller
             $sessionId = $request->query('sessionId');
             $conversations = Conversation::where('session_id', $sessionId)
                 ->select('role', 'content', 'created_at')
-                ->orderBy('created_at', 'desc')
+                ->orderBy('created_at', 'asc')
                 ->get();
         } else {
             $sessionId = Str::uuid();
