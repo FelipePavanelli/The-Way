@@ -1,7 +1,7 @@
 <header class="app-header">
     <div class="header-left">
         <a class="logo" href="{{ url('/') }}" class="home-link">
-            <img src="{{ Vite::asset('resources/images/logo.svg') }}" alt="Logo The Way" class="logo">
+            <img src="{{ asset('images/logo.svg') }}" alt="Logo The Way" class="logo">
         </a>
     </div>
     <div class="header-center">
@@ -50,4 +50,4 @@
             </div>
         </div>
     </div>
-</header> 
+</header>
