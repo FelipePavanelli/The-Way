@@ -21,7 +21,7 @@ class ChatController extends Controller
         }
 
         $chats = Chat::where('user_id', auth()->id())
-            ->get();
+            ->get()->orderBy('created_at', 'desc');
 
 
         // Se existir session_id na URL
