@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const suggestionButtons = document.querySelectorAll('.suggestion-button');
     const chatButtons = document.querySelectorAll('.chat-button');
     const scrollToBottomBtn = document.getElementById('scroll-to-bottom');
+    const urlParams = new URLSearchParams(window.location.search);
 
     // Estado da aplicação
     let currentChatId = null;
@@ -22,6 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Verificar posição inicial do scroll
         checkScrollPosition();
+
+        // Verificar se existe um sessionId na URL se nao houver, adiciona
+        if (!urlParams.has(new URLSearchParams(window.location.search))) {
+            urlParams.set('sessionId', document.querySelector('meta[name="session-id"]').content);
+            window.history.replaceState({}, '', `?${urlParams.toString()}`);
+        }
     }
 
     function setupEventListeners() {
