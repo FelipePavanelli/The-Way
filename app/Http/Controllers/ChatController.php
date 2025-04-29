@@ -21,7 +21,7 @@ class ChatController extends Controller
         }
 
         $chats = Chat::where('user_id', auth()->id())
-            ->get()->orderBy('created_at', 'desc');
+            ->orderBy('created_at', 'desc')->get();
 
 
         // Se existir session_id na URL
@@ -97,7 +97,7 @@ class ChatController extends Controller
                 ]);
 
                 DB::commit();
-                return  Str::markdown($responseData['reply']) ;
+                return  Str::markdown($responseData['reply']);
             }
 
             return response()->json('Erro no processamento da mensagem', 500);
