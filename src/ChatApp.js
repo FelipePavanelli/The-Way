@@ -1,25 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import {
-  FaArrowUp,
-  FaMoon,
-  FaSun,
-  FaBars,
-  FaEllipsisV,
-  FaPencilAlt,
-  FaTrash,
-  FaEnvelope,
-  FaSignOutAlt,
-  FaChartLine,
-  FaHubspot,
-  FaDollarSign,
-  FaArrowDown,
-  FaHandPaper
-} from "react-icons/fa";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import Logo from "./assets/logo.svg";
 import "./index.css";
+
+// Importação dos componentes
+import ChatHeader from "./components/ChatHeader";
+import ChatList from "./components/ChatList";
+import MessageFeed from "./components/MessageFeed";
+import InitialButtons from "./components/InitialButtons";
+import MessageInput from "./components/MessageInput";
+import Popup from "./components/Popup";
 
 // Função auxiliar para verificar se um elemento contém outro de forma segura
 function safeContains(element, target) {
@@ -91,6 +81,12 @@ function ChatApp() {
   // Novo estado para controlar o índice da frase de pensamento
   const [phraseIndex, setPhraseIndex] = useState(0);
   
+  // Estado para controlar qual API usar
+  const [useAV, setUseAV] = useState(false);
+  
+  // Estado para forçar a exibição do chat
+  const [forceShowChat, setForceShowChat] = useState(false);
+  
   // Array de frases de pensamento
   const thinkingPhrases = [
     "Pensando...",
@@ -120,6 +116,16 @@ function ChatApp() {
       if (interval) clearInterval(interval);
     };
   }, [showThinking, thinkingPhrases.length]);
+  
+  useEffect(() => {
+    // Ao inicializar, garantir que estamos sempre na tela inicial
+    setForceShowChat(false);
+    
+    // Se não tivermos mensagens de usuário, sempre deve mostrar os botões iniciais
+    if (!messages.some(m => m.role === "user")) {
+      setForceShowChat(false);
+    }
+  }, []); // Executa apenas uma vez na montagem do componente
 
   const getStoredMessages = useCallback((sid) => {
     const raw = localStorage.getItem(`messagesBySession_${user?.sub || user?.email || "default"}`);
@@ -136,17 +142,23 @@ function ChatApp() {
   }, [user]);
 
   const createNewSession = useCallback(() => {
+    // Criar novo ID
     const newId = crypto.randomUUID();
     setSessionId(newId);
     localStorage.setItem(`sessionId_${user?.sub || user?.email || "default"}`, newId);
     updateURLWithChatId(newId);
 
+    // Adicionar à lista de chats
     const newChatName = getUniqueChatName(chatList);
     const newChat = { id: newId, name: newChatName };
     setChatList((prev) => {
       const updatedList = [...prev, newChat];
       return Array.from(new Map(updatedList.map(item => [item.id, item])).values());
     });
+    
+    // Resetar para a tela inicial com os botões
+    setForceShowChat(false);
+    setMessages([{ role: "assistant", content: getInitialMessage(user) }]);
   }, [chatList, user]);
 
   const addChatToListIfMissing = useCallback((chatId) => {
@@ -409,18 +421,21 @@ function ChatApp() {
   function handleEmailButton() {
     if (!isThinking) {
       setPopupType("email");
-      setPopupMessage("Deseja receber por e-mail?");
+      setPopupMessage("Deseja receber a versão final?");
       setShowPopup(true);
     }
   }
   
   function confirmEmail() {
-    handleSendMessage("Enviar por e-mail.");
+    handleSendMessage("Me apresente o planejamento, na versão final para cliente.");
     setShowPopup(false);
   }
 
   async function handleSendMessage(customMsg) {
     if (isThinking) return;
+    
+    // Se customMsg for null, isso significa que estamos apenas iniciando uma nova sessão sem enviar mensagem
+    if (customMsg === null) return;
 
     const textToSend = customMsg || inputValue.trim();
     if (!textToSend) return;
@@ -435,7 +450,12 @@ function ChatApp() {
     setShowThinking(true);
 
     try {
-      const response = await fetch("https://api.theway.altavistainvest.com.br/api/agent", {
+      // Escolher o endpoint baseado no modo selecionado
+      const endpoint = useAV ? "http://localhost:4000/api/thewayiaav" : "http://localhost:4000/api/agent";
+      
+      console.log(`Enviando requisição para ${endpoint} (modo AV: ${useAV ? "ativado" : "desativado"})`);
+      
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -450,7 +470,7 @@ function ChatApp() {
       let botReply = data.reply || "Erro: sem resposta.";
       setMessages((prev) => [...prev, { role: "assistant", content: botReply }]);
     } catch (err) {
-      console.error("Erro ao chamar /api/agent:", err);
+      console.error(`Erro ao chamar ${useAV ? '/api/thewayiaav' : '/api/agent'}:`, err);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Ocorreu um erro ao obter a resposta." }
@@ -461,11 +481,57 @@ function ChatApp() {
     }
   }
 
+  // O estado hasUserMessage geralmente determina se devemos mostrar os botões iniciais
   const hasUserMessage = messages.some((m) => m.role === "user");
-  const showInitialButtons = !hasUserMessage;
+  // Se não há mensagens de usuário e não estamos forçando mostrar o chat, exibimos os botões
+  const showInitialButtons = !hasUserMessage && !forceShowChat;
+  
+  // Para debug - resetar para tela inicial
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Shift+Escape para reset (para debug)
+      if (e.key === 'Escape' && e.shiftKey) {
+        resetToButtons();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-  function handlePlanningButtonClick(text) {
-    handleSendMessage(text);
+  // Função para lidar com o clique no botão de planejamento financeiro
+  function handlePlanningButtonClick(text, isAVMode = false) {
+    console.log(`Botão clicado: ${isAVMode ? "AV" : "Planejamento"}`);
+    
+    // Definir modo API (TheWay-IA AV ou normal)
+    setUseAV(isAVMode);
+    
+    // Forçar a transição para a interface de chat
+    setForceShowChat(true);
+    
+    // Criar uma nova sessão para o chat
+    const newId = crypto.randomUUID();
+    setSessionId(newId);
+    localStorage.setItem(`sessionId_${user?.sub || user?.email || "default"}`, newId);
+    updateURLWithChatId(newId);
+    
+    // Adicionar novo chat na lista
+    const newChatName = getUniqueChatName(chatList);
+    const newChat = { id: newId, name: newChatName };
+    setChatList((prev) => {
+      const updatedList = [...prev, newChat];
+      return Array.from(new Map(updatedList.map(item => [item.id, item])).values());
+    });
+    
+    // Para o modo AV, não enviamos mensagem, apenas mantemos a mensagem de boas-vindas
+    if (isAVMode) {
+      setMessages([{ role: "assistant", content: getInitialMessage(user) }]);
+      return;
+    }
+    
+    // Para modo planejamento, enviamos a mensagem padrão
+    if (text) {
+      handleSendMessage(text);
+    }
   }
 
   function handleKeyDown(e) {
@@ -501,312 +567,142 @@ function ChatApp() {
     }
   }
 
+  // Função para resetar a interface para os botões iniciais (para debug se necessário)
+  function resetToButtons() {
+    console.log("Resetando para tela inicial");
+    setForceShowChat(false);
+    setMessages([{ role: "assistant", content: getInitialMessage(user) }]);
+    // Limpar as mensagens armazenadas
+    if (sessionId) {
+      const raw = localStorage.getItem(`messagesBySession_${user?.sub || user?.email || "default"}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        parsed[sessionId] = [{ role: "assistant", content: getInitialMessage(user) }];
+        localStorage.setItem(`messagesBySession_${user?.sub || user?.email || "default"}`, JSON.stringify(parsed));
+      }
+    }
+  }
+
+  // Função para lidar com o cancelamento de popups
+  function handlePopupCancel() {
+    setShowPopup(false);
+    setPopupInput("");
+    setRenamingChatId(null);
+    setDeletingChatId(null);
+  }
+
+  // Função para lidar com a confirmação de popups
+  function handlePopupConfirm() {
+    if (popupType === "rename") {
+      confirmRename();
+    } else if (popupType === "delete") {
+      confirmDelete();
+    } else if (popupType === "logout") {
+      confirmLogout();
+    } else if (popupType === "email") {
+      confirmEmail();
+    }
+  }
+
+  // Estilos para centralizar o conteúdo
+  const mainContainerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "calc(100vh - 200px)" // Ajuste conforme necessário
+  };
+
   return (
     <div className={`container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
-      {/* HEADER */}
-      <div className="top-bar">
-        <div className="top-bar-left">
-          <img src={Logo} alt="logo" />
-        </div>
-        <div className="top-bar-center">
-          <span className="the-way-label">The Way - Planejador Financeiro</span>
-        </div>
-        <div className="top-bar-right">
-          <button
-            onClick={() => setShowChatList(!showChatList)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "inherit",
-              cursor: "pointer",
-              fontSize: "1.2rem"
-            }}
-            aria-label="Abrir menu de chats"
-          >
-            <FaBars />
-          </button>
-          <button
-            onClick={toggleDarkMode}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "inherit",
-              cursor: "pointer",
-              fontSize: "1.2rem"
-            }}
-          >
-            {isDarkMode ? <FaSun /> : <FaMoon />}
-          </button>
-          <div style={{ position: "relative" }}>
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              style={{
-                background: "#f5e8d6",
-                border: "none",
-                borderRadius: "9999px",
-                width: "2.5rem",
-                height: "2.5rem",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-                color: "#333",
-                cursor: "pointer",
-                fontWeight: "bold",
-                fontSize: "1rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-              aria-label={isAuthenticated ? `Perfil de ${user.name || "usuário"}` : "Perfil"}
-              aria-expanded={showProfileMenu}
-            >
-              {isAuthenticated ? getUserInitial(user) : "z"}
-            </button>
-            {showProfileMenu && (
-              <div
-                id="profile-menu-dropdown"
-                className="profile-menu"
-                style={{
-                  position: "absolute",
-                  top: "3.2rem",
-                  right: 0,
-                  minWidth: "180px",
-                  background: isDarkMode ? "#2e2e3e" : "#f5e8d6",
-                  border: isDarkMode ? "1px solid #444" : "1px solid #ddd",
-                  borderRadius: "8px",
-                  padding: "0.5rem 1rem",
-                  boxShadow: "0 4px 8px rgba(0,0,0,0.2)"
-                }}
-              >
-                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                  <li style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.3rem 0", cursor: "pointer", fontFamily: '"Inter", sans-serif', fontWeight: 400 }}>
-                    <FaDollarSign /> AV Comissões
-                  </li>
-                  <li style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.3rem 0", cursor: "pointer", fontFamily: '"Inter", sans-serif', fontWeight: 400 }}>
-                    <FaChartLine /> TradeInsights
-                  </li>
-                  <li style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.3rem 0", cursor: "pointer", fontFamily: '"Inter", sans-serif', fontWeight: 400 }}>
-                    <FaHubspot /> HubSpot
-                  </li>
-                  <li style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.3rem 0", cursor: "pointer", color: "red", fontWeight: "bold", fontFamily: '"Inter", sans-serif' }} onClick={handleLogout}>
-                    <FaSignOutAlt /> Sair
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Cabeçalho */}
+      <ChatHeader
+        Logo={Logo}
+        showChatList={showChatList}
+        setShowChatList={setShowChatList}
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
+        showProfileMenu={showProfileMenu}
+        setShowProfileMenu={setShowProfileMenu}
+        user={user}
+        isAuthenticated={isAuthenticated}
+        handleLogout={handleLogout}
+        getUserInitial={getUserInitial}
+      />
 
-      {/* Painel de chats */}
+      {/* Lista de Chats */}
       {showChatList && (
-        <div className="chat-list-panel" ref={chatListPanelRef} style={{
-          maxHeight: "70vh",
-          overflowY: "auto"
-        }}>
-          <h3>Meus Chats</h3>
-          <ul>
-            {chatList.map((chat) => (
-              <li key={chat.id}>
-                <div className="chat-item" onClick={() => handleSelectChat(chat.id)}>
-                  <span>{chat.name}</span>
-                  <div className="chat-item-menu" onClick={(e) => toggleMenu(chat.id, e)}>
-                    <FaEllipsisV />
-                  </div>
-                  {openMenuChatId === chat.id && (
-                    <div className="chat-item-dropdown" style={{ display: "block", zIndex: 9999999 }} onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => handleRenameChat(chat.id)}>
-                        <FaPencilAlt style={{ color: isDarkMode ? "#fff" : "#333" }} /> Renomear
-                      </button>
-                      <button onClick={() => handleDeleteChat(chat.id)}>
-                        <FaTrash style={{ color: "red" }} /> Excluir
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-          <button onClick={createNewSession} className="new-chat-button">
-            + Novo Chat
-          </button>
-        </div>
+        <ChatList
+          chatList={chatList}
+          handleSelectChat={handleSelectChat}
+          openMenuChatId={openMenuChatId}
+          toggleMenu={toggleMenu}
+          handleRenameChat={handleRenameChat}
+          handleDeleteChat={handleDeleteChat}
+          isDarkMode={isDarkMode}
+          createNewSession={createNewSession}
+          chatListPanelRef={chatListPanelRef}
+        />
       )}
 
-      {/* MAIN com seta de voltar ao fim */}
-      <div className="main">
-        <div className="messages-feed" ref={messagesContainerRef}>
-          {messages.map((msg, index) => (
-            <div key={index} className={msg.role === "user" ? "message user-message" : "message assistant-message fade-in"}>
-              {msg.role === "user" ? (
-                <p style={{ whiteSpace: "pre-wrap" }}>{msg.content}</p>
-              ) : (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-              )}
-            </div>
-          ))}
-          {showThinking && (
-            <div className="message assistant-message fade-in">
-              <div className="typing-indicator">
-                <span className="typing-text">{thinkingPhrases[phraseIndex]}</span>
-                <div className="dots-container">
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        {showScrollToBottom && (
-          <button
-            onClick={scrollToBottom}
-            style={{
-              position: "fixed",
-              bottom: "120px",
-              right: "20px",
-              background: isDarkMode ? "#4d4d4d" : "#d6c3a9",
-              border: "none",
-              borderRadius: "50%",
-              width: "40px",
-              height: "40px",
-              cursor: "pointer",
-              color: isDarkMode ? "#fff" : "#333",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.2rem"
-            }}
-            aria-label="Voltar ao fim da conversa"
-          >
-            <FaArrowDown />
-          </button>
-        )}
-      </div>
-
-      {/* FOOTER com botão único */}
-      <div className="bottom-input">
+      {/* Área principal - mostra os botões iniciais ou as mensagens */}
+      <div className="main" style={showInitialButtons ? mainContainerStyle : {}}>
         {showInitialButtons ? (
-          <div className="initial-buttons-container">
-            <button className="initial-button" onClick={() => handlePlanningButtonClick("Quero fazer um Planejamento Financeiro.")}>
-              Quero fazer um Planejamento Financeiro
-            </button>
-          </div>
+          <>
+            <div style={{ textAlign: "center", marginBottom: "30px", fontSize: "18px" }}>
+              {getInitialMessage(user)}
+            </div>
+            <InitialButtons
+              onPlanningClick={handlePlanningButtonClick}
+              onAVClick={handlePlanningButtonClick}
+            />
+          </>
         ) : (
           <>
-            <div className="bottom-input-bg" />
-            <div className="new-input-box">
-              <textarea
-                ref={textareaRef}
-                placeholder="Mensagem para o The Way"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onInput={handleInput}
-                rows={1}
-                style={{
-                  flex: 0.7,
-                  marginRight: "0.5rem",
-                  fontFamily: '"Inter", sans-serif',
-                  fontSize: "1rem",
-                  fontWeight: 400
-                }}
+            <MessageFeed
+              messages={messages}
+              showThinking={showThinking}
+              thinkingPhrases={thinkingPhrases}
+              phraseIndex={phraseIndex}
+              messagesContainerRef={messagesContainerRef}
+              showScrollToBottom={showScrollToBottom}
+              scrollToBottom={scrollToBottom}
+              isDarkMode={isDarkMode}
+            />
+            <div className="bottom-input">
+              <MessageInput
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+                handleInput={handleInput}
+                handleKeyDown={handleKeyDown}
+                handleSendMessage={handleSendMessage}
+                handleEmailButton={handleEmailButton}
+                isThinking={isThinking}
+                textareaRef={textareaRef}
+                isDarkMode={isDarkMode}
               />
-              <div className="input-actions" style={{ flex: 0.3, display: "flex", gap: "0.5rem" }}>
-                <FaEnvelope
-                  onClick={handleEmailButton}
-                  style={{
-                    cursor: isThinking ? "not-allowed" : "pointer",
-                    fontSize: "1.2rem",
-                    color: isDarkMode ? "#ddd" : "#333"
-                  }}
-                />
-                {isThinking ? (
-                  <div
-                    style={{
-                      background: isDarkMode ? "#2e2e3e" : "#f5e8d6",
-                      border: "2px solid var(--border-color)",
-                      borderRadius: "4px",
-                      width: "40px",
-                      height: "40px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: isDarkMode ? "#cecccc" : "#333",
-                      fontSize: "1.2rem",
-                      cursor: "default"
-                    }}
-                    aria-label="Aguardando processamento (não clicável)"
-                  >
-                    <FaHandPaper />
-                  </div>
-                ) : (
-                  <FaArrowUp
-                    className="send-icon"
-                    onClick={() => handleSendMessage()}
-                    style={{
-                      fontSize: "1.2rem",
-                      cursor: "pointer",
-                      color: isDarkMode ? "#ddd" : "#333"
-                    }}
-                  />
-                )}
-              </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Popup personalizado */}
-      {showPopup && (
-        <div className="popup-overlay" onClick={() => { setShowPopup(false); setPopupInput(""); }}>
-          <div id="custom-popup" ref={popupRef} className="custom-popup" onClick={(e) => e.stopPropagation()}>
-            <p>{popupMessage}</p>
-            {popupType === "rename" && (
-              <input
-                type="text"
-                value={popupInput}
-                onChange={(e) => setPopupInput(e.target.value)}
-                placeholder="Digite o nome do chat"
-                className="popup-input"
-                autoFocus
-              />
-            )}
-            <div className="popup-actions">
-              <button className="popup-button" onClick={() => { 
-                setShowPopup(false); 
-                setPopupInput(""); 
-                setRenamingChatId(null);
-                setDeletingChatId(null);
-              }}>
-              Cancelar
-            </button>
-            <button
-              className="popup-button confirm"
-              onClick={() => {
-                if (popupType === "rename") {
-                  confirmRename();
-                } else if (popupType === "delete") {
-                  confirmDelete();
-                } else if (popupType === "logout") {
-                  confirmLogout();
-                } else if (popupType === "email") {
-                  confirmEmail();
-                }
-              }}
-              disabled={popupType === "rename" && (!popupInput || !popupInput.trim())}
-            >
-              {popupType === "email" ? "Show me The Way" : "Confirmar"}
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
+      {/* Popup para confirmações */}
+      <Popup
+        showPopup={showPopup}
+        popupMessage={popupMessage}
+        popupType={popupType}
+        popupInput={popupInput}
+        setPopupInput={setPopupInput}
+        handleCancel={handlePopupCancel}
+        handleConfirm={handlePopupConfirm}
+        popupRef={popupRef}
+      />
 
-    <div className="footer-text" style={{ fontFamily: '"Montserrat", sans-serif', fontSize: "0.6rem" }}>
-      Powered By Alta Vista Investimentos - V1.1.7
+      <div className="footer-text" style={{ fontFamily: '"Montserrat", sans-serif', fontSize: "0.6rem" }}>
+        Powered By Alta Vista Investimentos - V1.2.7
+      </div>
     </div>
-  </div>
-);
+  );
 }
 
 export default ChatApp;
