@@ -48,7 +48,7 @@ app.post("/api/agent", async (req, res) => {
 
   try {
     const flowResp = await fetch(
-      "https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
+      "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,7 +151,7 @@ app.post("/api/sendEmail", async (req, res) => {
 
   try {
     const flowResp = await fetch(
-      "https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
+      "https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

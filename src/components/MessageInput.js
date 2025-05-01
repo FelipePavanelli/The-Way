@@ -1,7 +1,6 @@
 import React from 'react';
-import { FaArrowUp, FaEnvelope, FaHandPaper } from 'react-icons/fa';
 
-function MessageInput({ 
+const MessageInput = ({ 
   inputValue, 
   setInputValue, 
   handleInput, 
@@ -9,108 +8,53 @@ function MessageInput({
   handleSendMessage, 
   handleEmailButton, 
   isThinking, 
-  textareaRef,
-  isDarkMode 
-}) {
+  textareaRef 
+}) => {
   return (
-    <>
-      <div className="bottom-input-bg" />
-      <div className="new-input-box" style={{
-        display: "flex",
-        alignItems: "center",
-        width: "100%",
-        maxWidth: "800px",
-        margin: "0 auto",
-        padding: "10px 20px",
-        borderRadius: "30px", 
-        background: isDarkMode ? "#3a3a3a" : "#f5e8d6",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
-      }}>
+    <div className="mt-4">
+      <div className="relative">
         <textarea
           ref={textareaRef}
-          placeholder="Mensagem para o The Way"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
           onInput={handleInput}
-          rows={1}
-          style={{
-            flex: 1,
-            marginRight: "0.5rem",
-            fontFamily: '"Inter", sans-serif',
-            fontSize: "1rem",
-            fontWeight: 400,
-            padding: "12px 16px",
-            minHeight: "48px",
-            background: "transparent",
-            borderRadius: "24px",
-            border: "none",
-            outline: "none",
-            resize: "none"
-          }}
-        />
-        <div className="input-actions" style={{ display: "flex", gap: "0.8rem" }}>
+          onKeyDown={handleKeyDown}
+          placeholder="Digite sua mensagem..."
+          disabled={isThinking}
+          className="w-full p-3 pr-20 bg-card border border-border/50 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 min-h-[50px] max-h-[200px]"
+          rows="1"
+        ></textarea>
+        
+        <div className="absolute right-2 bottom-2 flex gap-2">
+          {/* Botão de e-mail (versão final) */}
           <button
             onClick={handleEmailButton}
+            className="p-2 rounded-md hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground"
             disabled={isThinking}
-            style={{
-              cursor: isThinking ? "not-allowed" : "pointer",
-              background: "transparent",
-              border: "none",
-              color: isDarkMode ? "#ddd" : "#333",
-              fontSize: "1.2rem",
-              padding: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
           >
-            <FaEnvelope />
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
           </button>
-          {isThinking ? (
-            <div
-              style={{
-                background: isDarkMode ? "#2e2e3e" : "#e8d7bc",
-                border: "none",
-                borderRadius: "50%",
-                width: "40px",
-                height: "40px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: isDarkMode ? "#cecccc" : "#333",
-                fontSize: "1.2rem",
-                cursor: "default"
-              }}
-              aria-label="Aguardando processamento (não clicável)"
-            >
-              <FaHandPaper />
-            </div>
-          ) : (
-            <button
-              className="send-button"
-              onClick={() => handleSendMessage()}
-              style={{
-                fontSize: "1.2rem",
-                cursor: "pointer",
-                color: "#fff",
-                background: isDarkMode ? "#555" : "#c0aa88",
-                border: "none",
-                borderRadius: "50%",
-                width: "40px",
-                height: "40px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              <FaArrowUp />
-            </button>
-          )}
+          
+          {/* Botão de enviar */}
+          <button
+            onClick={() => handleSendMessage()}
+            disabled={isThinking || !inputValue.trim()}
+            className={`p-2 rounded-md ${inputValue.trim() && !isThinking 
+              ? "bg-accent text-accent-foreground hover:bg-accent/90" 
+              : "bg-secondary/50 text-muted-foreground cursor-not-allowed"} transition-colors`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m22 2-7 20-4-9-9-4Z"></path>
+              <path d="M22 2 11 13"></path>
+            </svg>
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
-}
+};
 
 export default MessageInput;

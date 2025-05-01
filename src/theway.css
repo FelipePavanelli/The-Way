@@ -1,0 +1,204 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Base */
+:root {
+  --background: 220 15% 93%;
+  --foreground: 220 100% 14%;
+
+  --card: 220 15% 100%;
+  --card-foreground: 220 100% 14%;
+
+  --popover: 220 15% 100%;
+  --popover-foreground: 220 100% 14%;
+
+  --primary: 210 97% 25%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 220 15% 96%;
+  --secondary-foreground: 220 100% 14%;
+
+  --muted: 220 15% 90%;
+  --muted-foreground: 220 25% 40%;
+
+  --accent: 210 95% 40%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 354 50% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 220 25% 85%;
+  --input: 220 25% 85%;
+  --ring: 222.2 84% 4.9%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222 100% 7%;
+  --foreground: 220 15% 93%;
+
+  --card: 210 70% 15%;
+  --card-foreground: 220 15% 93%;
+
+  --popover: 210 70% 15%;
+  --popover-foreground: 220 15% 93%;
+
+  --primary: 210 95% 45%;
+  --primary-foreground: 220 15% 100%;
+
+  --secondary: 210 50% 20%;
+  --secondary-foreground: 220 15% 93%;
+
+  --muted: 210 30% 20%;
+  --muted-foreground: 210 15% 70%;
+
+  --accent: 210 95% 45%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 354 45% 55%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 210 40% 20%;
+  --input: 210 40% 20%;
+  --ring: 210 60% 50%;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+/* Utility classes */
+.container {
+  width: 100%;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.financial-card {
+  border-radius: 0.75rem;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid hsl(var(--border)/0.8);
+  transition: all 0.3s;
+}
+
+.financial-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Animation utilities */
+.animate-in {
+  animation-duration: 300ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.slide-in-from-top {
+  animation-name: slideInFromTop;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar styling */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prose styles for message content */
+.prose {
+  max-width: 65ch;
+  color: inherit;
+}
+
+.prose p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.dark .prose {
+  --tw-prose-body: hsl(var(--foreground));
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-links: hsl(var(--accent));
+  --tw-prose-bold: hsl(var(--foreground));
+  --tw-prose-counters: hsl(var(--muted-foreground));
+  --tw-prose-bullets: hsl(var(--muted-foreground));
+  --tw-prose-quotes: hsl(var(--foreground));
+  --tw-prose-code: hsl(var(--foreground));
+  --tw-prose-hr: hsl(var(--border));
+  --tw-prose-td-borders: hsl(var(--border));
+}
+
+/* Chat component specific styles */
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-25%);
+  }
+}
