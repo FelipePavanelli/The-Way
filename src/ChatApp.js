@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import Logo from "./assets/logo.svg";
 import "./theway.css";
+import "./layout-fixes.css"; // Importar os fixes de layout
+import "./fix-layout.css"; // Importar fixes adicionais
 
 // Custom hooks
 import { useTheme } from "./hooks/useTheme";
@@ -67,7 +69,7 @@ function ChatApp() {
     if (showThinking) {
       interval = setInterval(() => {
         setPhraseIndex((prevIndex) => (prevIndex + 1) % thinkingPhrases.length);
-      }, 3000);
+      }, 6000);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -92,7 +94,7 @@ function ChatApp() {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [openMenuChatId]);
+  }, [openMenuChatId, setOpenMenuChatId]);
 
   useEffect(() => {
     if (showChatList && chatListPanelRef.current) {
@@ -229,7 +231,9 @@ function ChatApp() {
     e.target.style.height = "auto";
     e.target.style.height = e.target.scrollHeight + "px";
   }
-
+  
+  // Função para resetar a altura do textarea
+  // Essa função é usada para resetar a altura do textarea após o envio da mensagem
   function resetTextarea() {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -238,7 +242,7 @@ function ChatApp() {
   
   // Renderização do componente  
   return (
-    <div className={`flex flex-col min-h-screen ${isDarkMode ? 'dark' : ''} bg-background text-foreground`}>
+    <div className={`flex flex-col min-h-screen ${isDarkMode ? 'dark' : ''} bg-background text-foreground relative`}>
       {/* Cabeçalho */}
       <Header 
         logo={Logo}
@@ -288,7 +292,23 @@ function ChatApp() {
       
       {/* Área principal */}
       <main className="flex-1 container mx-auto px-4 flex flex-col">
-        {showInitialButtons ? (
+        {!showInitialButtons ? (
+          /* Interface de chat */
+          <>
+            <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full py-4">
+              <MessageFeed
+                messages={messages}
+                showThinking={showThinking}
+                thinkingPhrases={thinkingPhrases}
+                phraseIndex={phraseIndex}
+                messagesContainerRef={messagesContainerRef}
+                showScrollToBottom={showScrollToBottom}
+                scrollToBottom={scrollToBottom}
+                setOpenMenuChatId={setOpenMenuChatId}
+              />
+            </div>
+          </>
+        ) : (
           /* Tela inicial com botões */
           <div className="flex-1 flex flex-col items-center justify-center py-10">
             <div className="text-center mb-8 animate-fade-in">
@@ -301,32 +321,31 @@ function ChatApp() {
               onAVClick={handlePlanningButtonClick}
             />
           </div>
-        ) : (
-          /* Interface de chat */
-          <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full py-4">
-            <MessageFeed
-              messages={messages}
-              showThinking={showThinking}
-              thinkingPhrases={thinkingPhrases}
-              phraseIndex={phraseIndex}
-              messagesContainerRef={messagesContainerRef}
-              showScrollToBottom={showScrollToBottom}
-              scrollToBottom={scrollToBottom}
-            />
-            
-            <MessageInput
-              inputValue={inputValue}
-              setInputValue={setInputValue}
-              handleInput={handleInput}
-              handleKeyDown={handleKeyDown}
-              handleSendMessage={handleSendMessage}
-              handleEmailButton={showEmailPopup}
-              isThinking={isThinking}
-              textareaRef={textareaRef}
-            />
-          </div>
         )}
       </main>
+
+      {/* Input de mensagem (fixo acima do footer) */}
+      {!showInitialButtons && (
+        <div className="fixed-bottom-input">
+          <div className="flex justify-center w-full px-4">
+            <div className="w-full max-w-[700px]">
+              <MessageInput
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+                handleInput={handleInput}
+                handleKeyDown={handleKeyDown}
+                handleSendMessage={() => {
+                  handleSendMessage();
+                  resetTextarea(); // Usando a função resetTextarea após enviar a mensagem
+                }}
+                handleEmailButton={showEmailPopup}
+                isThinking={isThinking}
+                textareaRef={textareaRef}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Popup para confirmações */}
       <Popup
@@ -341,7 +360,7 @@ function ChatApp() {
       />
 
       {/* Rodapé */}
-      <footer className="py-4 text-center text-xs text-muted-foreground">
+      <footer className="py-2 text-center text-xs text-muted-foreground">
         Powered By Alta Vista Investimentos - V1.3.0
       </footer>
     </div>

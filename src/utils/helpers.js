@@ -64,6 +64,10 @@ export function getStoredMessages(sessionId, userId) {
 
 // Função para armazenar mensagens
 export function storeMessages(sessionId, messages, userId) {
+  // Verificar se há mensagens do usuário antes de salvar
+  const userMessages = messages.filter(m => m.role === "user");
+  console.log(`Salvando ${messages.length} mensagens para sessão ${sessionId}, incluindo ${userMessages.length} do usuário:`, userMessages);
+
   const raw = localStorage.getItem(`messagesBySession_${userId || "default"}`);
   const parsed = raw ? JSON.parse(raw) : {};
   parsed[sessionId] = messages;
@@ -81,12 +85,12 @@ export function removeMessagesForChatId(chatId, userId) {
 
 // Array de frases de pensamento para o indicador de "digitando"
 export const thinkingPhrases = [
-  "Pensando...",
-  "Analisando sua mensagem...",
-  "Processando informações...",
-  "Elaborando resposta...",
-  "Considerando opções...",
-  "Avaliando alternativas...",
-  "Organizando dados...",
-  "Calculando resultados..."
+  "Pensando",
+  "Analisando sua mensagem",
+  "Processando informações",
+  "Elaborando resposta",
+  "Considerando opções",
+  "Avaliando alternativas",
+  "Organizando dados",
+  "Calculando resultados"
 ];

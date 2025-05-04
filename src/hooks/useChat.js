@@ -211,16 +211,18 @@ export function useChat(user) {
       return;
     }
     
-    // Primeiro, definimos as mensagens iniciais - mensagem do assistente seguida da mensagem do usuário
-    setMessages([
+    // Primeiro, definimos as mensagens iniciais de forma consistente
+    const initialMessages = [
       { role: "assistant", content: getInitialMessage(user) },
-      { role: "user", content: "Quero fazer um planejamento financeiro" }
-    ]);
+      { role: "user", content: text } // Usar o texto passado pelo botão
+    ];
+    setMessages(initialMessages);
     
-    // Agora simulamos uma resposta do assistente após um curto intervalo
+    // Agora simulamos uma resposta do assistente após uma pausa para garantir que a UI exiba a mensagem do usuário
     setIsThinking(true);
     setShowThinking(true);
     
+    // Esperar 500ms para garantir que a UI atualize e mostre a mensagem do usuário antes de iniciar a requisição
     setTimeout(async () => {
       try {
         // Fazer a requisição para o servidor
@@ -229,7 +231,7 @@ export function useChat(user) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            message: "Quero fazer um planejamento financeiro",
+            message: text, // Usar o texto passado pelo botão
             sessionId: newId,
             userName: user?.name || "",
             userId: user?.sub || "",
@@ -240,20 +242,21 @@ export function useChat(user) {
         const data = await response.json();
         let botReply = data.reply || "Olá! Vou ajudar você com seu planejamento financeiro. Para começarmos, poderia me contar um pouco sobre seus objetivos financeiros atuais?";
         
-        // Atualizar as mensagens com a resposta
-        setMessages((prev) => [...prev, { role: "assistant", content: botReply }]);
+        // Atualizar as mensagens com a resposta, mantendo a mensagem do usuário
+        setMessages([{ role: "assistant", content: getInitialMessage(user) },
+                     { role: "user", content: text },
+                     { role: "assistant", content: botReply }]);
       } catch (err) {
         console.error(`Erro ao chamar /api/agent:`, err);
-        // Fallback para uma resposta padrão em caso de erro
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Olá! Vou ajudar você com seu planejamento financeiro. Para começarmos, poderia me contar um pouco sobre seus objetivos financeiros atuais?" }
-        ]);
+        // Fallback para uma resposta padrão em caso de erro, mantendo a mensagem do usuário
+        setMessages([{ role: "assistant", content: getInitialMessage(user) },
+                     { role: "user", content: text },
+                     { role: "assistant", content: `Olá! Vou ajudar você com seu planejamento financeiro conforme solicitado: "${text}". Para começarmos, poderia me contar um pouco sobre seus objetivos financeiros atuais?` }]);
       } finally {
         setIsThinking(false);
         setShowThinking(false);
       }
-    }, 1000);
+    }, 500); // Aumentamos para 500ms para garantir que a UI tenha tempo de atualizar
   }, [chatList, user, setIsThinking, setShowThinking]);
 
   // Efeito para salvar a lista de chats no localStorage
@@ -292,10 +295,11 @@ export function useChat(user) {
   // Efeito para salvar mensagens ao alterá-las
   useEffect(() => {
     if (sessionId && messages.length > 0) {
-      saveUserMessages(sessionId, messages);
-      
       // Verificação para debug
       console.log(`Mensagens salvas para sessão ${sessionId}:`, messages);
+      
+      // Garante que todas as mensagens, incluindo a do usuário, sejam salvas
+      saveUserMessages(sessionId, messages);
     }
   }, [messages, sessionId, saveUserMessages]);
 
