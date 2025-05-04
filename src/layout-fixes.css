@@ -1,0 +1,55 @@
+/* Estilos para corrigir o layout */
+
+/* Footer fixo */
+footer {
+  position: sticky !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  background-color: var(--bg-background) !important;
+  z-index: 10 !important;
+  border-top: 1px solid rgba(var(--border), 0.2) !important;
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+/* Área principal com espaço para o footer */
+main {
+  padding-bottom: 3rem !important; /* Espaço para o footer */
+}
+
+/* Ajustes na área de entrada de mensagem */
+.message-input-container {
+  position: relative !important;
+  z-index: 20 !important; /* Maior que o footer */
+  margin-bottom: 1rem !important;
+  background-color: var(--bg-background) !important;
+}
+
+/* Garantir que a área de mensagem sempre fique visível */
+textarea {
+  resize: none !important;
+  min-height: 50px !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+/* Prevenir que o conteúdo fique escondido quando há muito texto */
+.flex-grow {
+  min-height: 0 !important;
+}
+
+/* Ajustar o layout de contêineres para evitar overflow */
+.flex-col {
+  min-height: 0 !important;
+}
+
+/* Ajustes para dispositivos móveis */
+@media (max-width: 768px) {
+  .message-input-container {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  main {
+    padding-bottom: 2.5rem !important;
+  }
+}
