@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\DataExtractController;
 use App\Http\Controllers\ClientReportController;
 
@@ -19,3 +21,7 @@ use App\Http\Controllers\ClientReportController;
 
 Route::get('/data-extract/{session_id}', [DataExtractController::class, 'show']);
 Route::get('/client-reports/{session_id}', [ClientReportController::class, 'show']);
+
+
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/register', [UserController::class, 'register']);
