@@ -153,8 +153,7 @@ export function useChat(user) {
 
     try {
       // Escolher o endpoint baseado no modo selecionado
-      const endpoint = useAV ? "http://localhost:4000/api/thewayiaav" : "http://localhost:4000/api/agent";
-      
+      const endpoint = useAV ? "https://api.theway.altavistainvest.com.br/api/thewayiaav" : "https://api.theway.altavistainvest.com.br/api/agent";
       console.log(`Enviando requisição para ${endpoint} (modo AV: ${useAV ? "ativado" : "desativado"})`);
       
       const response = await fetch(endpoint, {
@@ -226,7 +225,7 @@ export function useChat(user) {
     setTimeout(async () => {
       try {
         // Fazer a requisição para o servidor
-        const endpoint = "http://localhost:4000/api/agent";
+        const endpoint = "https://api.theway.altavistainvest.com.br/api/agent";
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
