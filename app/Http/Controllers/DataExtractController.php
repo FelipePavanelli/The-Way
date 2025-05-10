@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 
 use Illuminate\Http\JsonResponse;
-use App\Models\Models\DataExtract;
+use App\Models\DataExtract;
 
 class DataExtractController extends Controller
 {

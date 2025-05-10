@@ -14,7 +14,7 @@ return [
     */
 
     'defaults' => [
-         'guard' => 'auth0'
+        'guard' => 'auth0'
     ],
 
     /*
@@ -42,7 +42,7 @@ return [
 
         'api' => [
             'driver' => 'jwt',
-            'provider' => 'prospect',
+            'provider' => 'client',
         ],
     ],
 
@@ -64,9 +64,9 @@ return [
     */
 
     'providers' => [
-        'prospect' => [
+        'client' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Prospect::class,
+            'model' => App\Models\Client::class,
         ],
 
         // 'users' => [
@@ -95,8 +95,8 @@ return [
     */
 
     'passwords' => [
-        'prospect' => [
-            'provider' => 'prospect',
+        'client' => [
+            'provider' => 'client',
             'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,

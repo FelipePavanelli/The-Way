@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Models\ClientReport;
+use App\Models\ClientReport;
 use Illuminate\Http\JsonResponse;
 
 
