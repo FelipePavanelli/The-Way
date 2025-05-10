@@ -14,8 +14,7 @@ return [
     */
 
     'defaults' => [
-        'guard' => 'api',
-        'passwords' => 'prospect',
+         'guard' => 'auth0'
     ],
 
     /*
@@ -37,8 +36,8 @@ return [
 
     'guards' => [
         'web' => [
-            'driver' => 'session',
-            'provider' => 'prospect',
+            'driver' => 'auth0',
+            'provider' => 'auth0',
         ],
 
         'api' => [
