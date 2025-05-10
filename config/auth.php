@@ -14,8 +14,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => 'web',
-        'passwords' => 'users',
+        'guard' => 'api',
+        'passwords' => 'prospect',
     ],
 
     /*
@@ -38,12 +38,12 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'prospect',
         ],
 
         'api' => [
             'driver' => 'jwt',
-            'provider' => 'users',
+            'provider' => 'prospect',
         ],
     ],
 
@@ -65,9 +65,9 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'prospect' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Models\Prospect::class,
         ],
 
         // 'users' => [
@@ -96,8 +96,8 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
+        'prospect' => [
+            'provider' => 'prospect',
             'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,

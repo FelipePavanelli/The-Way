@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\User;
+use App\Models\Prospect;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -37,11 +37,11 @@ class AuthController extends Controller
     }
 
     /**
-     * Get the authenticated User.
+     * Get the authenticated Prospect.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function userProfile()
+    public function ProspectsProfile()
     {
         return response()->json(auth()->user());
     }
