@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-
+use App\Models\ClientReport;
 use Illuminate\Http\JsonResponse;
-use App\Models\DataExtract;
+use App\Http\Controllers\Controller;
 
-class DataExtractController extends Controller
+
+class ClientReportController extends Controller
 {
+
     public function show(string $session_id): JsonResponse
     {
-        $data = DataExtract::where('session_id', $session_id)->get();
-
+        $data = ClientReport::where('session_id', $session_id)->select('report_data')->get();
         if ($data->isEmpty()) {
             return response()->json(['message' => 'No data found.'], 404);
         }

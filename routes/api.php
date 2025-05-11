@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
-use App\Http\Controllers\DataExtractController;
-use App\Http\Controllers\ClientReportController;
+use App\Http\Controllers\Api\DataExtractController;
+use App\Http\Controllers\Api\ClientReportController;
+
 
 
 /*
