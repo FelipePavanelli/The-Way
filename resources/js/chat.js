@@ -116,12 +116,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    async function generateUserReport() {
+    async function generateUserReport(event) {
+        event.preventDefault();
         scrollToBottom();
         showTypingIndicator();
         try {
             // Configuração da requisição
-           const requestConfig = {
+            const requestConfig = {
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": document.querySelector(
@@ -131,23 +132,18 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
             const response = await axios.post(
-                "/chat/process-message",
-                {
-                    userMessage: 'Me apresente o planejamento, na versão final para cliente.',
-                    sessionId: sessionId,
-                },
+                "/gerar-relatorio",
+                { sessionId },
                 requestConfig
             );
-
             removeTypingIndicator();
+
             // Verifica se há resposta da API
             if (response.data) {
-                 addMessage("assistant", response.data);
+                addMessage("assistant", response.data);
                 const url = `${linkRelatorio}/relatorio/?sessionId=${sessionId}`;
                 window.open(url, "_blank");
             }
-
-        
         } catch (error) {
             removeTypingIndicator();
             addMessage(
