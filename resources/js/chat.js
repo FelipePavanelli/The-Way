@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
         showTypingIndicator();
         try {
             // Configuração da requisição
-            const requestConfig = {
+           const requestConfig = {
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": document.querySelector(
@@ -131,18 +131,23 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
             const response = await axios.post(
-                "/gerar-relatorio",
-                { sessionId },
+                "/chat/process-message",
+                {
+                    userMessage: 'Me apresente o planejamento, na versão final para cliente.',
+                    sessionId: sessionId,
+                },
                 requestConfig
             );
-            removeTypingIndicator();
 
+            removeTypingIndicator();
             // Verifica se há resposta da API
             if (response.data) {
-                addMessage("assistant", response.data);
+                 addMessage("assistant", response.data);
                 const url = `${linkRelatorio}/relatorio/?sessionId=${sessionId}`;
                 window.open(url, "_blank");
             }
+
+        
         } catch (error) {
             removeTypingIndicator();
             addMessage(
