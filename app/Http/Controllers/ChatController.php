@@ -85,7 +85,7 @@ class ChatController extends Controller
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-            ])->post($webhookUrl, $webhookData);
+            ])->timeout(160)->post($webhookUrl, $webhookData);
 
             if ($response->successful()) {
                 $responseData = $response->json();

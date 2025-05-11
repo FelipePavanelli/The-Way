@@ -21,5 +21,5 @@ Route::middleware('auth')->group(function () {
     Route::put('/chats/{chat}', [ChatController::class, 'update'])->name('chats.update');
     Route::delete('/chats/{chat}', [ChatController::class, 'destroy'])->name('chats.destroy');
 
-    Route::get('/relatorio', [ReportController::class, 'index'])->name('reports');
+    Route::post('/gerar-relatorio', [ReportController::class, 'generateReport'])->name('generate.report');
 });

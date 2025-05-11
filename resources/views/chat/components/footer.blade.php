@@ -11,8 +11,9 @@
                 <textarea id="message-input" placeholder="Mensagem para o The Way" rows="1"
                     aria-label="Digite sua mensagem"></textarea>
                 <div class="input-actions">
-                    <a href="{{ env('LINK_RELATORIO') }}/?sessionId={{ $sessionId }}" target="_blank"
-                        class="action-button report-button" aria-label="Gerar Relatório">
+
+                    <a href="#" target="_blank" class="action-button report-button" id="report-button"
+                        data-link-relatorio="{{ env('LINK_RELATORIO') }}">
                         <i class="fas fa-file-alt" aria-hidden="true"></i>
                         <span class="report-text">Gerar Relatório</span>
                     </a>

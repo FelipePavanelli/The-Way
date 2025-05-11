@@ -1,14 +1,19 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     // Elementos DOM relacionados ao chat
-    const chatContainer = document.querySelector('.chat-container');
-    const messagesContainer = document.getElementById('messages-container');
-    const messageInput = document.getElementById('message-input');
-    const sendButton = document.getElementById('send-button');
-    const initialButtons = document.getElementById('initial-buttons');
-    const messageInputContainer = document.getElementById('message-input-container');
-    const suggestionButtons = document.querySelectorAll('.suggestion-button');
-    const chatButtons = document.querySelectorAll('.chat-button');
-    const scrollToBottomBtn = document.getElementById('scroll-to-bottom');
+    const chatContainer = document.querySelector(".chat-container");
+    const messagesContainer = document.getElementById("messages-container");
+    const messageInput = document.getElementById("message-input");
+    const sendButton = document.getElementById("send-button");
+    const reportButton = document.getElementById("report-button");
+    const linkRelatorio = reportButton.getAttribute("data-link-relatorio");
+    const initialButtons = document.getElementById("initial-buttons");
+    const messageInputContainer = document.getElementById(
+        "message-input-container"
+    );
+    const suggestionButtons = document.querySelectorAll(".suggestion-button");
+    const chatButtons = document.querySelectorAll(".chat-button");
+    const scrollToBottomBtn = document.getElementById("scroll-to-bottom");
+    const sessionId = document.querySelector('meta[name="session-id"]').content;
     const urlParams = new URLSearchParams(window.location.search);
 
     // Estado da aplicação
@@ -26,21 +31,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Verificar se existe um sessionId na URL se nao houver, adiciona
         if (!urlParams.has(new URLSearchParams(window.location.search))) {
-            urlParams.set('sessionId', document.querySelector('meta[name="session-id"]').content);
-            window.history.replaceState({}, '', `?${urlParams.toString()}`);
+            urlParams.set("sessionId", sessionId);
+            window.history.replaceState({}, "", `?${urlParams.toString()}`);
         }
     }
 
     function setupEventListeners() {
         // Chat
-        sendButton.addEventListener('click', sendUserMessage);
-        messageInput.addEventListener('keydown', handleTextareaKeydown);
-        messageInput.addEventListener('input', autoResizeTextarea);
+        sendButton.addEventListener("click", sendUserMessage);
+        reportButton.addEventListener("click", generateUserReport);
+        messageInput.addEventListener("keydown", handleTextareaKeydown);
+        messageInput.addEventListener("input", autoResizeTextarea);
 
         // Botões de sugestão
-        suggestionButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const message = button.getAttribute('data-message');
+        suggestionButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const message = button.getAttribute("data-message");
                 sendMessage(message);
                 hideInitialButtons();
                 showMessageInput();
@@ -48,21 +54,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Controle de scroll
-        chatContainer.addEventListener('scroll', checkScrollPosition);
-        scrollToBottomBtn.addEventListener('click', scrollToBottom);
+        chatContainer.addEventListener("scroll", checkScrollPosition);
+        scrollToBottomBtn.addEventListener("click", scrollToBottom);
     }
 
     function autoResizeTextarea() {
-        this.style.height = 'auto';
-        this.style.height = this.scrollHeight + 'px';
+        this.style.height = "auto";
+        this.style.height = this.scrollHeight + "px";
     }
 
     function hideInitialButtons() {
-        initialButtons.classList.add('hidden');
+        initialButtons.classList.add("hidden");
     }
 
     function showMessageInput() {
-        messageInputContainer.classList.add('visible');
+        messageInputContainer.classList.add("visible");
         messageInput.focus();
     }
 
@@ -70,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function sendMessage(text) {
         // Validação básica
         if (!text.trim()) return;
-        addMessage('user', text);
+        addMessage("user", text);
         scrollToBottom();
         showTypingIndicator();
 
@@ -78,35 +84,75 @@ document.addEventListener('DOMContentLoaded', function() {
             // Configuração da requisição
             const requestConfig = {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                },
             };
 
-            // Capturar o sessionId da meta tag
-            const sessionId = document.querySelector('meta[name="session-id"]').content;
-
             const response = await axios.post(
-                '/chat/process-message',
+                "/chat/process-message",
                 {
                     userMessage: text,
-                    sessionId: sessionId
+                    sessionId: sessionId,
                 },
                 requestConfig
             );
 
-                removeTypingIndicator();
-                // Verifica se há resposta da API
-                if (response.data) {
-                    addMessage('assistant', response.data);
-                }
-
-
+            removeTypingIndicator();
+            // Verifica se há resposta da API
+            if (response.data) {
+                addMessage("assistant", response.data);
+            }
         } catch (error) {
             removeTypingIndicator();
-            addMessage('assistant', 'Erro ao processar sua mensagem, tente novamente');
+            addMessage(
+                "assistant",
+                "Erro ao processar sua mensagem, tente novamente"
+            );
             scrollToBottom();
-            console.error('Erro na requisição:', error);
+            console.error("Erro na requisição:", error);
+        }
+    }
+
+    async function generateUserReport(event) {
+        event.preventDefault();
+        scrollToBottom();
+        showTypingIndicator();
+        try {
+            // Configuração da requisição
+            const requestConfig = {
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                },
+            };
+
+            const response = await axios.post(
+                "/gerar-relatorio",
+                { sessionId },
+                requestConfig
+            );
+            removeTypingIndicator();
+
+            // Verifica se há resposta da API
+            if (response.data) {
+                addMessage("assistant", response.data);
+                const url = `${linkRelatorio}/relatorio/?sessionId=${sessionId}`;
+                window.open(url, "_blank");
+            }
+        } catch (error) {
+            removeTypingIndicator();
+            addMessage(
+                "assistant",
+                "Erro ao gerar relatório, tente novamente."
+            );
+
+            scrollToBottom();
+            console.error("Erro ao gerar relatório:".error);
         }
     }
 
@@ -114,19 +160,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const text = messageInput.value.trim();
         if (text) {
             sendMessage(text);
-            messageInput.value = '';
-            messageInput.style.height = 'auto';
+            messageInput.value = "";
+            messageInput.style.height = "auto";
         }
     }
 
     function addMessage(sender, text) {
-        const messageDiv = document.createElement('div');
+        const messageDiv = document.createElement("div");
         messageDiv.className = `message ${sender}-message fade-in`;
 
-        if (sender === 'assistant') {
+        if (sender === "assistant") {
             messageDiv.innerHTML = text;
-        }
-        else {
+        } else {
             messageDiv.innerHTML = `<p>${text}</p>`;
         }
 
@@ -134,14 +179,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showTypingIndicator() {
-        const existingIndicator = document.querySelector('.typing-indicator');
+        const existingIndicator = document.querySelector(".typing-indicator");
         if (existingIndicator) return;
 
         // Disable input and send button
         messageInput.disabled = true;
         messageInput.placeholder = "The Way está digitando...";
         sendButton.disabled = true;
-        sendButton.classList.add('disabled');
+        sendButton.classList.add("disabled");
 
         const typingMessages = [
             "Pensando",
@@ -151,15 +196,17 @@ document.addEventListener('DOMContentLoaded', function() {
             "Considerando opções",
             "Avaliando alternativas",
             "Organizando dados",
-            "Calculando resultados"
+            "Calculando resultados",
         ];
 
         // Shuffle array to randomize message order
-        const shuffledMessages = [...typingMessages].sort(() => Math.random() - 0.5);
+        const shuffledMessages = [...typingMessages].sort(
+            () => Math.random() - 0.5
+        );
         let currentMessageIndex = 0;
 
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message assistant-message typing-message';
+        const typingDiv = document.createElement("div");
+        typingDiv.className = "message assistant-message typing-message";
         typingDiv.innerHTML = `
             <div class="typing-indicator-container">
                 <div class="typing-text">${shuffledMessages[currentMessageIndex]}</div>
@@ -175,26 +222,28 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottom();
 
         // Add continuous blinking fade effect
-        const textElement = typingDiv.querySelector('.typing-text');
+        const textElement = typingDiv.querySelector(".typing-text");
         let fadeInterval = setInterval(() => {
-            textElement.style.transition = 'opacity 0.5s ease-in-out';
-            textElement.style.opacity = textElement.style.opacity === '0.5' ? '1' : '0.5';
+            textElement.style.transition = "opacity 0.5s ease-in-out";
+            textElement.style.opacity =
+                textElement.style.opacity === "0.5" ? "1" : "0.5";
         }, 1000);
 
         // Change message every 3 seconds with fade animation
         const changeInterval = setInterval(() => {
             // Fade out completely before changing
-            textElement.style.transition = 'opacity 0.3s ease';
-            textElement.style.opacity = '0';
+            textElement.style.transition = "opacity 0.3s ease";
+            textElement.style.opacity = "0";
 
             setTimeout(() => {
                 // Update message
-                currentMessageIndex = (currentMessageIndex + 1) % shuffledMessages.length;
+                currentMessageIndex =
+                    (currentMessageIndex + 1) % shuffledMessages.length;
                 textElement.textContent = shuffledMessages[currentMessageIndex];
 
                 // Fade in to blinking state
                 setTimeout(() => {
-                    textElement.style.opacity = '0.5';
+                    textElement.style.opacity = "0.5";
                 }, 10);
             }, 300);
         }, 3000);
@@ -205,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function removeTypingIndicator() {
-        const typingMessage = document.querySelector('.typing-message');
+        const typingMessage = document.querySelector(".typing-message");
         if (typingMessage) {
             typingMessage.remove();
         }
@@ -214,12 +263,12 @@ document.addEventListener('DOMContentLoaded', function() {
         messageInput.disabled = false;
         messageInput.placeholder = "Mensagem para o The Way";
         sendButton.disabled = false;
-        sendButton.classList.remove('disabled');
+        sendButton.classList.remove("disabled");
         messageInput.focus(); // Opcional: retorna o foco para o input
     }
 
     function handleTextareaKeydown(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             sendUserMessage();
         }
@@ -228,19 +277,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Funções de Scroll
     function checkScrollPosition() {
         const threshold = 100;
-        const isAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < threshold;
+        const isAtBottom =
+            chatContainer.scrollHeight -
+                chatContainer.scrollTop -
+                chatContainer.clientHeight <
+            threshold;
 
         if (isAtBottom) {
-            scrollToBottomBtn.classList.remove('visible');
+            scrollToBottomBtn.classList.remove("visible");
         } else {
-            scrollToBottomBtn.classList.add('visible');
+            scrollToBottomBtn.classList.add("visible");
         }
     }
 
     function scrollToBottom() {
         chatContainer.scrollTo({
             top: chatContainer.scrollHeight,
-            behavior: 'smooth'
+            behavior: "smooth",
         });
 
         // Esconde o botão após rolar
