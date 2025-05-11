@@ -12,11 +12,11 @@
                     aria-label="Digite sua mensagem"></textarea>
                 <div class="input-actions">
 
-                    <a class="action-button report-button" id="report-button"
+                    <button  class="action-button report-button" id="report-button"
                         data-link-relatorio="{{ env('LINK_RELATORIO') }}">
                         <i class="fas fa-file-alt" aria-hidden="true"></i>
                         <span class="report-text">Gerar Relatório</span>
-                    </a>
+                    </button>
                     <button class="action-button send-button" id="send-button" aria-label="Enviar mensagem">
                         <i class="fas fa-arrow-up" aria-hidden="true"></i>
                     </button>

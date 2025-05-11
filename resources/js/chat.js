@@ -116,8 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    async function generateUserReport(event) {
-        event.preventDefault();
+    async function generateUserReport() {
         scrollToBottom();
         showTypingIndicator();
         try {
