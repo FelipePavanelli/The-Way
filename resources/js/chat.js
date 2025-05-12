@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Verifica se há resposta da API
             if (response.data) {
                 addMessage("assistant", response.data);
-                const url = `${linkRelatorio}/relatorio/?sessionId=${sessionId}`;
+                const url = `${linkRelatorio}/?sessionId=${sessionId}`;
                 window.open(url, "_blank");
             }
         } catch (error) {
