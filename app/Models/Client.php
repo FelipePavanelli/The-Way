@@ -20,6 +20,7 @@ class Client extends Authenticatable implements JWTSubject
     protected $fillable = [
         'name',
         'email',
+        'session_id',
         'password',
     ];
 
