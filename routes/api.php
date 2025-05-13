@@ -21,10 +21,5 @@ use App\Http\Controllers\Api\ClientReportController;
 
 Route::get('/data-extract/{session_id}', [DataExtractController::class, 'show']);
 Route::get('/client-reports/{session_id}', [ClientReportController::class, 'show']);
-
-
 Route::post('/auth/login', [AuthController::class, 'login']);
-// Route::post('/register', [ClientController::class, 'register']);
-
-
 Route::post('/gerar-relatorio-cliente', [ClientController::class, 'clientGenerateReport'])->name('client.generate.report');
