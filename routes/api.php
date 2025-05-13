@@ -24,4 +24,7 @@ Route::get('/client-reports/{session_id}', [ClientReportController::class, 'show
 
 
 Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/register', [ClientController::class, 'register']);
+// Route::post('/register', [ClientController::class, 'register']);
+
+
+Route::post('/gerar-relatorio-cliente', [ClientController::class, 'clientGenerateReport'])->name('client.generate.report');
