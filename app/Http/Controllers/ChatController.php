@@ -34,7 +34,7 @@ class ChatController extends Controller
                 ->first();
 
             if (!$chat) {
-                return abort(404);
+                abort(403, 'Sessão inválida ou acesso negado.');
             }
 
             // Se existir, busca as conversas associadas a esse session_id
@@ -42,7 +42,6 @@ class ChatController extends Controller
                 ->select('role', 'content', 'created_at')
                 ->orderBy('created_at', 'asc')
                 ->get();
-
         } else {
             $sessionId = Str::uuid();
             $conversations = null;
