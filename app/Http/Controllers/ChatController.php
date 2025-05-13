@@ -23,20 +23,31 @@ class ChatController extends Controller
         $chats = Chat::where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')->get();
 
-
         // Se existir session_id na URL
         if ($request->has('sessionId')) {
+
             $sessionId = $request->query('sessionId');
+
+            // Verifica se o session_id e daquele usuario
+            $chat = Chat::where('session_id', $sessionId)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$chat) {
+                return abort(404);
+            }
+
+            // Se existir, busca as conversas associadas a esse session_id
             $conversations = Conversation::where('session_id', $sessionId)
                 ->select('role', 'content', 'created_at')
                 ->orderBy('created_at', 'asc')
                 ->get();
+
         } else {
             $sessionId = Str::uuid();
             $conversations = null;
         }
 
-        // dd( $conversations);
         return view('chat.app', [
             'sessionId' => $sessionId,
             'chats' => $chats ? $chats : null,
