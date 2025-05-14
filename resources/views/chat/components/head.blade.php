@@ -18,7 +18,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/x-icon">
+    <!-- Favicon -->
+    <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/vnd.microsoft.icon">
+
 
     <!-- crf -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -29,4 +31,4 @@
     'resources/js/app.js',
     ])
 </head>
-</rewritten_file> 
+</rewritten_file>
