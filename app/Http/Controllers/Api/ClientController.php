@@ -49,4 +49,40 @@ class ClientController extends Controller
             'password' => $password,
         ]);
     }
+
+    public function updateHiddenCards(Request $request)
+    {
+        $request->validate([
+            'session_id' => 'required|string',
+            // 'hiddenCards' => 'required|array',
+        ]);
+
+        $client = Client::where('session_id', $request->session_id)->first();
+
+        if (!$client) {
+            return response()->json(['message' => 'Cliente não encontrado'], 404);
+        }
+
+        $client->hidden_cards = json_encode($request->hiddenCards);
+        $client->save();
+
+        return response()->json(['message' => 'Cartões ocultos atualizados com sucesso']);
+    }
+
+    public function getHiddenCards(Request $request)
+    {
+        $request->validate([
+            'session_id' => 'required|string',
+        ]);
+
+        $client = \App\Models\Client::where('session_id', $request->session_id)->first();
+
+        if (!$client) {
+            return response()->json(['message' => 'Cliente não encontrado'], 404);
+        }
+
+        return response()->json([
+            'hiddenCards' => json_decode($client->hidden_cards, true)
+        ]);
+    }
 }
