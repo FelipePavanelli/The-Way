@@ -89,6 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         'meta[name="csrf-token"]'
                     ).content,
                 },
+                timeout: 180000,
             };
 
             const response = await axios.post(
@@ -129,6 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         'meta[name="csrf-token"]'
                     ).content,
                 },
+                timeout: 180000,
             };
 
             const response = await axios.post(

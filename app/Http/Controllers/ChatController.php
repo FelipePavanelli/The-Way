@@ -92,10 +92,15 @@ class ChatController extends Controller
                 'userEmail' => auth()->user()->email
             ];
 
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])->timeout(160)->post($webhookUrl, $webhookData);
+            $response = Http::withOptions([
+                'timeout' => 180,
+                'connect_timeout' => 30
+            ])
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])
+                ->post($webhookUrl, $webhookData);
 
             if ($response->successful()) {
                 $responseData = $response->json();
