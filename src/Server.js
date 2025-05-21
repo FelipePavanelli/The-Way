@@ -52,6 +52,7 @@ app.post("/api/agent", async (req, res) => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        timeout: 180000, // 3 minutos
         body: JSON.stringify({
           userMessage: message,
           sessionId: finalSessionId,
@@ -104,6 +105,7 @@ app.post("/api/thewayiaav", async (req, res) => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        timeout: 180000, // 3 minutos
         body: JSON.stringify({
           userMessage: message,
           sessionId: finalSessionId,
@@ -155,6 +157,7 @@ app.post("/api/sendEmail", async (req, res) => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        timeout: 180000, // 3 minutos
         body: JSON.stringify({
           userMessage: "Receber o planejamento por e-mail",
           sessionId: finalSessionId

@@ -159,6 +159,7 @@ export function useChat(user) {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        timeout: 180000, // 3 minutos
         body: JSON.stringify({
           message: textToSend,
           sessionId: sessionId,
