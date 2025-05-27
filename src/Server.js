@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // 🔧 ADICIONE ISSO
+app.use(express.urlencoded({ extended: true }));
 const port = 4000;
 
 // Redireciona para o login do Auth0
@@ -28,11 +28,10 @@ app.get('/oauth/login', (req, res) => {
   res.redirect(authUrl);
 });
 
-
 // Recebe o código do Auth0 e troca por token
 app.post('/oauth/token', async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, redirect_uri } = req.body;
 
     const response = await axios.post(
       `https://${process.env.AUTH0_DOMAIN}/oauth/token`,
@@ -41,7 +40,7 @@ app.post('/oauth/token', async (req, res) => {
         client_id: process.env.AUTH0_CLIENT_ID,
         client_secret: process.env.AUTH0_CLIENT_SECRET,
         code,
-        redirect_uri: process.env.AUTH0_CALLBACK_URL,
+        redirect_uri  // <-- 🔧 usa o redirect_uri real enviado pelo GPT
       }),
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     );
@@ -54,7 +53,6 @@ app.post('/oauth/token', async (req, res) => {
 
 // Exemplo de endpoint protegido
 app.get('/me', (req, res) => {
-  // Aqui você validaria o token recebido via Auth0 (Bearer token)...
   res.json({ user: 'dados do usuário autenticado' });
 });
 
