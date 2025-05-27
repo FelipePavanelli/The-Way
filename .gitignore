@@ -27,3 +27,5 @@ yarn-error.log*
 /Python Server/.env
 /src/Server.js
 Server.js
+.env
+/src/.env
