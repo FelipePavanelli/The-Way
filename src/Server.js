@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // 🔧 ADICIONE ISSO
 const port = 4000;
 
 // Redireciona para o login do Auth0
