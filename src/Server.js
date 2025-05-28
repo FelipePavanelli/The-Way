@@ -52,9 +52,28 @@ app.post('/oauth/token', async (req, res) => {
 });
 
 // Exemplo de endpoint protegido
-app.get('/me', (req, res) => {
-  res.json({ user: 'dados do usuário autenticado' });
+app.get('/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token ausente ou inválido' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const userInfo = await axios.get(`https://${process.env.AUTH0_DOMAIN}/userinfo`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    res.json({ user: userInfo.data });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar dados do usuário', detalhes: error.response?.data || error.message });
+  }
 });
+
 
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
