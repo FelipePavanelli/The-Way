@@ -52,9 +52,9 @@ app.post('/oauth/token', async (req, res) => {
 });
 
 // Exemplo de endpoint protegido
+// Rota protegida que busca info do Auth0
 app.get('/me', async (req, res) => {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token ausente ou inválido' });
   }
@@ -63,16 +63,20 @@ app.get('/me', async (req, res) => {
 
   try {
     const userInfo = await axios.get(`https://${process.env.AUTH0_DOMAIN}/userinfo`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
-    res.json({ user: userInfo.data });
+    // Envie name e email
+    res.json({
+      name: userInfo.data.name,
+      email: userInfo.data.email
+    });
+
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar dados do usuário', detalhes: error.response?.data || error.message });
+    res.status(500).json({ error: 'Erro ao obter dados do usuário' });
   }
 });
+
 
 
 app.listen(port, () => {
