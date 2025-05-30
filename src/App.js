@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import ChatApp from "./ChatApp.js"; // seu componente de chat
+import ChatApp from "./ChatApp.js";
 import Logo from "./assets/logo.svg";
+import "./styles.css";
 
 function App() {
   const { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
@@ -17,22 +18,25 @@ function App() {
   if (isLoading) {
     return (
       <div className="container light-mode">
-        {/* Top Bar igual ao do ChatApp */}
+        {/* Top Bar */}
         <div className="top-bar">
           <div className="top-bar-left">
             <img src={Logo} alt="logo" />
           </div>
           <div className="top-bar-center">
-            <span className="the-way-label">The Way</span>
+            <span className="the-way-label">The Way - Planejador Financeiro</span>
           </div>
-          <div className="top-bar-right">
-            {/* Se quiser algum botão ou espaço, coloque aqui */}
-          </div>
+          <div className="top-bar-right"></div>
         </div>
 
         {/* Conteúdo de loading */}
-        <div className="loading-screen fade-in">
-          <p>Carregando...</p>
+        <div className="loading-screen">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Iniciando o The Way...</p>
+        </div>
+        
+        <div className="footer-text">
+          Powered By Alta Vista Investimentos - V1.2.0
         </div>
       </div>
     );
