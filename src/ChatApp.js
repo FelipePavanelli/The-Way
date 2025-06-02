@@ -90,7 +90,8 @@ function ChatApp() {
         confirmRename={chatState.confirmRename}
         confirmDelete={chatState.confirmDelete}
         confirmLogout={chatState.confirmLogout}
-        confirmEmail={chatState.confirmEmail}
+        confirmSuccess={chatState.confirmSuccess}
+        confirmError={chatState.confirmError}
         setRenamingChatId={chatState.setRenamingChatId}
         setDeletingChatId={chatState.setDeletingChatId}
         popupRef={chatState.popupRef}

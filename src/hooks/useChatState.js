@@ -405,14 +405,58 @@ export const useChatState = () => {
 
   function handleEmailButton() {
     if (!isThinking) {
-      setPopupType("email");
-      setPopupMessage("Deseja receber por e-mail?");
+      generateReport();
+    }
+  }
+  
+  async function generateReport() {
+    try {
+      // Preparar dados do histórico do chat
+      const chatHistory = {
+        sessionId: sessionId,
+        user: user?.email || user?.name || 'Usuário',
+        timestamp: new Date().toISOString(),
+        messages: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date().toISOString()
+        }))
+      };
+
+      // Enviar para a API do n8n
+      const response = await fetch('https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chatHistory)
+      });
+
+      if (response.ok) {
+        // Mostrar popup de sucesso com link
+        setPopupType("success");
+        setPopupMessage(`O relatório está sendo preparado e em até 2 minutos estará disponível no link: https://relatorio.theway.altavistainvest.com.br/?sessionId=${sessionId}`);
+        setShowPopup(true);
+      } else {
+        throw new Error('Erro ao enviar relatório');
+      }
+    } catch (error) {
+      console.error('Erro ao gerar relatório:', error);
+      // Mostrar popup de erro
+      setPopupType("error");
+      setPopupMessage("Erro ao gerar relatório. Tente novamente.");
       setShowPopup(true);
     }
   }
   
-  function confirmEmail() {
-    handleSendMessage("Enviar por e-mail.");
+  function confirmSuccess() {
+    // Abrir o link do relatório em nova aba
+    const reportUrl = `https://relatorio.theway.altavistainvest.com.br/?sessionId=${sessionId}`;
+    window.open(reportUrl, '_blank');
+    setShowPopup(false);
+  }
+  
+  function confirmError() {
     setShowPopup(false);
   }
 
@@ -594,7 +638,8 @@ export const useChatState = () => {
     handleLogout,
     confirmLogout,
     handleEmailButton,
-    confirmEmail,
+    confirmSuccess,
+    confirmError,
     toggleMenu,
     toggleDarkMode,
     scrollToBottom,

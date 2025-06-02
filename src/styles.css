@@ -420,7 +420,7 @@ p {
   flex: 1;
   overflow-y: auto;
   margin-top: 60px;
-  margin-bottom: 100px;
+  margin-bottom: 80px;
   padding-bottom: var(--spacing-lg);
   position: relative;
   display: flex;
@@ -564,7 +564,7 @@ p {
 .bottom-input,
 .app-footer {
   background: #f5e8d6;
-  padding-top: var(--spacing-sm);
+  padding: 0;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -576,7 +576,7 @@ p {
   max-width: 880px;
   margin: 0 auto;
   width: 100%;
-  padding: 0 var(--spacing-md);
+  padding: var(--spacing-md);
   position: relative;
 }
 
@@ -809,23 +809,23 @@ textarea::placeholder,
 }
 
 .custom-popup {
-  background: white;
+  background: var(--bg);
   border-radius: 12px;
   padding: 1.5rem;
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-.dark-mode .custom-popup {
-  background: var(--hover-dark);
-  border: 1px solid var(--border-dark);
+  max-width: 500px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
 }
 
 .popup-message {
   margin-top: 0;
   margin-bottom: 1.5rem;
   font-size: 1.1rem;
+  color: var(--text);
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
 .popup-input {
@@ -1091,30 +1091,21 @@ textarea::placeholder,
 .admin-section select {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.95rem;
-  background: var(--background-light);
-  color: var(--text-light);
+  background: var(--bg);
+  color: var(--text);
   font-family: inherit;
-}
-
-.dark-mode .admin-section textarea,
-.dark-mode .admin-section input[type="text"],
-.dark-mode .admin-section input[type="number"],
-.dark-mode .admin-section select {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: var(--border-dark);
-  color: var(--text-dark);
 }
 
 .admin-section textarea:focus,
 .admin-section input[type="text"]:focus,
 .admin-section input[type="number"]:focus,
 .admin-section select:focus {
-  border-color: var(--primary);
+  border-color: var(--accent);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 2px rgba(141, 110, 99, 0.2);
 }
 
 .form-group {
