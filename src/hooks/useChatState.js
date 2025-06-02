@@ -53,14 +53,14 @@ export const useChatState = () => {
   // Estado para frases de pensamento
   const [phraseIndex, setPhraseIndex] = useState(0);
   const thinkingPhrases = [
-    "Pensando...",
-    "Analisando sua mensagem...",
-    "Processando informações...",
-    "Elaborando resposta...",
-    "Considerando opções...",
-    "Avaliando alternativas...",
-    "Organizando dados...",
-    "Calculando resultados..."
+    "...",
+    "...",
+    "...",
+    "...",
+    "...",
+    "...",
+    "...",
+    "..."
   ];
 
   // Refs
@@ -424,7 +424,7 @@ export const useChatState = () => {
       };
 
       // Enviar para a API do n8n
-      const response = await fetch('https://n8n.altavistainvest.com.br/webhook-test/27a5a92e-e71e-45c1-aecd-0c36d112b94c', {
+      const response = await fetch('https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -490,6 +490,35 @@ export const useChatState = () => {
   function resetTextarea() {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
+    }
+  }
+
+  // Função para enviar dados para o webhook do n8n
+  async function sendToWebhook(userMessage, aiResponse) {
+    try {
+      const webhookData = {
+        sessionId: sessionId,
+        user: user?.email || user?.name || 'Usuário',
+        timestamp: new Date().toISOString(),
+        interaction: {
+          human: userMessage,
+          ai: aiResponse
+        }
+      };
+
+      const response = await fetch('https://n8n.altavistainvest.com.br/webhook/27a5a92e-e71e-45c1-aecd-0c36d112b94c', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData)
+      });
+
+      if (!response.ok) {
+        console.warn('Falha ao enviar dados para webhook:', response.status);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar para webhook:', error);
     }
   }
 
@@ -569,12 +598,19 @@ export const useChatState = () => {
       // Adicionar a resposta completa do assistente ao histórico
       setMessages(prev => [...prev, { role: "assistant", content: fullText }]);
 
+      // Enviar interação para o webhook do n8n
+      await sendToWebhook(textToSend, fullText);
+
     } catch (error) {
       console.error('Error:', error);
+      const errorMessage = "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.";
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente." }
+        { role: "assistant", content: errorMessage }
       ]);
+      
+      // Enviar erro para o webhook também
+      await sendToWebhook(textToSend, errorMessage);
     } finally {
       setIsThinking(false);
       setShowThinking(false);
