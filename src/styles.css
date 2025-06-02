@@ -425,6 +425,7 @@ p {
   position: relative;
   display: flex;
   flex-direction: column;
+  background: #f5e8d6;
 }
 
 .messages-feed {
@@ -498,8 +499,9 @@ p {
   align-self: flex-start;
   flex-direction: column;
   gap: var(--spacing-sm);
-  background: var(--input-bg);
+  background: #ffffff;
   border-bottom-left-radius: var(--border-radius-sm);
+  border: 1px solid var(--border);
 }
 
 .typing-indicator {
@@ -561,7 +563,7 @@ p {
 /* Input Area */
 .bottom-input,
 .app-footer {
-  background: var(--bg);
+  background: #f5e8d6;
   padding-top: var(--spacing-sm);
   position: fixed;
   bottom: 0;
