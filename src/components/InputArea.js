@@ -1,5 +1,5 @@
 import React from "react";
-import { FaArrowUp, FaEnvelope, FaHandPaper } from "react-icons/fa";
+import { FaArrowUp, FaFileAlt } from "react-icons/fa";
 
 function InputArea({ 
   showInitialButtons, 
@@ -15,68 +15,61 @@ function InputArea({
   isDarkMode
 }) {
   return (
-    <div className="bottom-input">
-      {showInitialButtons ? (
-        <div className="initial-buttons-container">
-          <button className="initial-button" onClick={() => handlePlanningButtonClick("Quero fazer um Planejamento Financeiro.")}>
-            Quero fazer um Planejamento Financeiro
+    <footer className="app-footer">
+      <div className="input-container">
+        <div className={`initial-buttons ${!showInitialButtons ? 'hidden' : ''}`} id="initial-buttons">
+          <button 
+            className="suggestion-button" 
+            onClick={() => handlePlanningButtonClick("Quero fazer um Planejamento Financeiro passo a passo.")}
+          >
+            Planejamento Financeiro passo a passo
           </button>
         </div>
-      ) : (
-        <>
-          <div className="bottom-input-bg" />
-          <div className="new-input-box">
-            <textarea
+
+        <div className={`message-input-container ${!showInitialButtons ? 'visible' : ''}`} id="message-input-container">
+          <div className="input-wrapper">
+            <textarea 
               ref={textareaRef}
-              placeholder="Mensagem para o The Way"
+              id="message-input"
+              placeholder="Mensagem para o The Way" 
+              rows={1}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               onInput={handleInput}
-              rows={1}
-              className="message-textarea"
+              aria-label="Digite sua mensagem"
             />
             <div className="input-actions">
-              <button
-                className="action-button"
-                onClick={handleEmailButton}
-                disabled={isThinking}
-                aria-label="Enviar por e-mail"
-                style={{
-                  cursor: isThinking ? "not-allowed" : "pointer",
-                  color: isDarkMode ? "#ddd" : "#333"
+              <a 
+                href="#" 
+                target="_blank"
+                className="action-button report-button" 
+                aria-label="Gerar Relatório"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleEmailButton();
                 }}
               >
-                <FaEnvelope />
+                <FaFileAlt aria-hidden="true" />
+                <span className="report-text">Gerar Relatório</span>
+              </a>
+              <button 
+                className="action-button send-button" 
+                id="send-button" 
+                onClick={() => handleSendMessage()}
+                disabled={isThinking}
+                aria-label="Enviar mensagem"
+              >
+                <FaArrowUp aria-hidden="true" />
               </button>
-              {isThinking ? (
-                <div
-                  className="thinking-button"
-                  aria-label="Aguardando processamento (não clicável)"
-                  style={{
-                    background: isDarkMode ? "#2e2e3e" : "#f5e8d6",
-                    color: isDarkMode ? "#cecccc" : "#333"
-                  }}
-                >
-                  <FaHandPaper />
-                </div>
-              ) : (
-                <button
-                  className="action-button send"
-                  onClick={() => handleSendMessage()}
-                  aria-label="Enviar mensagem"
-                  style={{
-                    color: isDarkMode ? "#ddd" : "#333"
-                  }}
-                >
-                  <FaArrowUp />
-                </button>
-              )}
             </div>
           </div>
-        </>
-      )}
-    </div>
+        </div>
+      </div>
+      <div className="footer-credits">
+        <p>Powered By Alta Vista Investimentos - V1.2.0</p>
+      </div>
+    </footer>
   );
 }
 
