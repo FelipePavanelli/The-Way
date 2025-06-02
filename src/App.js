@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import ChatApp from "./ChatApp.js";
 import Logo from "./assets/logo.svg";
@@ -6,6 +6,7 @@ import "./styles.css";
 
 function App() {
   const { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
+  const [forceReady, setForceReady] = useState(false);
 
   useEffect(() => {
     // Se não estiver carregando e não estiver autenticado, redireciona para login
@@ -14,8 +15,20 @@ function App() {
     }
   }, [isLoading, isAuthenticated, loginWithRedirect]);
 
+  // Timeout para forçar carregamento após 5 segundos
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Auth0 loading timeout - forcing ready state');
+        setForceReady(true);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
+
   // Se ainda está carregando as credenciais do Auth0, exibe tela de loading
-  if (isLoading) {
+  if (isLoading && !forceReady) {
     return (
       <div className="container light-mode">
         {/* Top Bar */}

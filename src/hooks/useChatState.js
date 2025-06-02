@@ -70,7 +70,7 @@ export const useChatState = () => {
   const popupRef = useRef(null);
 
   // URL base da API
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000";
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
   // Persistência de dark mode
   useEffect(() => {
