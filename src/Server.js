@@ -4,7 +4,7 @@ const cors = require('cors');
 const axios = require('axios');
 const qs = require('qs');
 const { OpenAI } = require('openai');
-const { FINANCIAL_PLANNING_PROMPT } = require('./src/prompts/financial-planning');
+const { FINANCIAL_PLANNING_PROMPT } = require('./prompts/financial-planning');
 
 const app = express();
 const port = process.env.PORT || 4000;
