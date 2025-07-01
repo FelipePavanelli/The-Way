@@ -190,28 +190,10 @@ document.addEventListener("DOMContentLoaded", function () {
         sendButton.disabled = true;
         sendButton.classList.add("disabled");
 
-        const typingMessages = [
-            "Pensando",
-            "Analisando sua mensagem",
-            "Processando informações",
-            "Elaborando resposta",
-            "Considerando opções",
-            "Avaliando alternativas",
-            "Organizando dados",
-            "Calculando resultados",
-        ];
-
-        // Shuffle array to randomize message order
-        const shuffledMessages = [...typingMessages].sort(
-            () => Math.random() - 0.5
-        );
-        let currentMessageIndex = 0;
-
         const typingDiv = document.createElement("div");
         typingDiv.className = "message assistant-message typing-message";
         typingDiv.innerHTML = `
             <div class="typing-indicator-container">
-                <div class="typing-text">${shuffledMessages[currentMessageIndex]}</div>
                 <div class="typing-indicator">
                     <span></span>
                     <span></span>
@@ -222,33 +204,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         messagesContainer.appendChild(typingDiv);
         scrollToBottom();
-
-        // Add continuous blinking fade effect
-        const textElement = typingDiv.querySelector(".typing-text");
-        let fadeInterval = setInterval(() => {
-            textElement.style.transition = "opacity 0.5s ease-in-out";
-            textElement.style.opacity =
-                textElement.style.opacity === "0.5" ? "1" : "0.5";
-        }, 1000);
-
-        // Change message every 3 seconds with fade animation
-        const changeInterval = setInterval(() => {
-            // Fade out completely before changing
-            textElement.style.transition = "opacity 0.3s ease";
-            textElement.style.opacity = "0";
-
-            setTimeout(() => {
-                // Update message
-                currentMessageIndex =
-                    (currentMessageIndex + 1) % shuffledMessages.length;
-                textElement.textContent = shuffledMessages[currentMessageIndex];
-
-                // Fade in to blinking state
-                setTimeout(() => {
-                    textElement.style.opacity = "0.5";
-                }, 10);
-            }, 300);
-        }, 3000);
 
         // Store interval IDs so we can clear them later
         typingDiv.dataset.fadeIntervalId = fadeInterval;
