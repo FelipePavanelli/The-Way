@@ -25,4 +25,5 @@ Route::get('/client-reports/{session_id}', [ClientReportController::class, 'show
 Route::post('/gerar-relatorio-cliente', [ClientController::class, 'clientGenerateReport'])->name('client.generate.report');
 Route::post('/clients/update-hidden-cards', [ClientController::class, 'updateHiddenCards']);
 Route::get('/clients/hidden-cards', [ClientController::class, 'getHiddenCards']);
+Route::post('/clients/eventos-liquidez', [ClientController::class, 'storeOrUpdateEventsLiquidez']);
 

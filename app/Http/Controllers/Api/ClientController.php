@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Client;
-use App\Http\Controllers\Controller;
-// use App\Http\Requests\CreateClientRequest;
 use Illuminate\Http\Request;
+// use App\Http\Requests\CreateClientRequest;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 
 class ClientController extends Controller
 {
@@ -74,8 +75,7 @@ class ClientController extends Controller
         $request->validate([
             'session_id' => 'required|string',
         ]);
-
-        $client = \App\Models\Client::where('session_id', $request->session_id)->first();
+        $client = Client::where('session_id', $request->session_id)->first();
 
         if (!$client) {
             return response()->json(['message' => 'Cliente não encontrado'], 404);
@@ -83,6 +83,41 @@ class ClientController extends Controller
 
         return response()->json([
             'hiddenCards' => json_decode($client->hidden_cards, true)
+        ]);
+    }
+
+    public function storeOrUpdateEventsLiquidez(Request $request)
+    {
+        $data = $request->only(['session_id', 'evento', 'idade', 'tipo', 'valor']);
+
+        $request->validate([
+            'session_id' => 'nullable|string',
+            'evento'     => 'nullable|string',
+            'idade'      => 'nullable|integer',
+            'tipo'       => 'nullable|string',
+            'valor'      => 'nullable|numeric',
+        ]);
+
+        // Se session_id estiver vazio ou nulo, sempre insere um novo
+        if (empty($data['session_id'])) {
+            DB::table('eventos_liquidez')->insert($data);
+        } else {
+            // Verifica se já existe com session_id
+            $exists = DB::table('eventos_liquidez')
+                ->where('session_id', $data['session_id'])
+                ->exists();
+
+            if ($exists) {
+                DB::table('eventos_liquidez')
+                    ->where('session_id', $data['session_id'])
+                    ->update($data);
+            } else {
+                DB::table('eventos_liquidez')->insert($data);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Evento salvo com sucesso.',
         ]);
     }
 }
