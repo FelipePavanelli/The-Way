@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 // use App\Http\Requests\CreateClientRequest;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class ClientController extends Controller
 {
@@ -86,38 +87,66 @@ class ClientController extends Controller
         ]);
     }
 
-    public function storeOrUpdateEventsLiquidez(Request $request)
+    public function listEventsLiquidity(Request $request)
     {
-        $data = $request->only(['session_id', 'evento', 'idade', 'tipo', 'valor']);
-
         $request->validate([
-            'session_id' => 'nullable|string',
-            'evento'     => 'nullable|string',
-            'idade'      => 'nullable|integer',
-            'tipo'       => 'nullable|string',
-            'valor'      => 'nullable|numeric',
+            'session_id' => 'required|string',
         ]);
 
-        // Se session_id estiver vazio ou nulo, sempre insere um novo
-        if (empty($data['session_id'])) {
-            DB::table('eventos_liquidez')->insert($data);
-        } else {
-            // Verifica se já existe com session_id
+        $sessionId = $request->query('session_id');
+
+        $eventsLiquidity = DB::table('eventos_liquidez')
+            ->where('session_id', $sessionId)
+            ->get();
+
+        return response()->json([
+            'eventsLiquidity' => $eventsLiquidity
+        ]);
+    }
+
+    public function storeOrUpdateEventsLiquidity(Request $request)
+    {
+        $payload = $request->all();
+
+        // Transforma em array se for um único objeto
+        $eventos = is_array($payload) && isset($payload[0]) ? $payload : [$payload];
+
+        foreach ($eventos as $evento) {
+            // Validação inline
+            $validator = Validator::make($evento, [
+                'session_id' => 'required|string',
+                'nome'       => 'required|string',
+                'idade'      => 'required|integer',
+                'tipo'       => 'required|string',
+                'valor'      => 'required|numeric',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Erro de validação.',
+                    'errors' => $validator->errors(),
+                    'evento' => $evento
+                ], 422);
+            }
+
+            // Atualiza ou insere com base em session_id + nome
             $exists = DB::table('eventos_liquidez')
-                ->where('session_id', $data['session_id'])
+                ->where('session_id', $evento['session_id'])
+                ->where('nome', $evento['nome'])
                 ->exists();
 
             if ($exists) {
                 DB::table('eventos_liquidez')
-                    ->where('session_id', $data['session_id'])
-                    ->update($data);
+                    ->where('session_id', $evento['session_id'])
+                    ->where('nome', $evento['nome'])
+                    ->update($evento);
             } else {
-                DB::table('eventos_liquidez')->insert($data);
+                DB::table('eventos_liquidez')->insert($evento);
             }
         }
 
         return response()->json([
-            'message' => 'Evento salvo com sucesso.',
+            'message' => 'Evento(s) salvo(s) com sucesso.'
         ]);
     }
 }

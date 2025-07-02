@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ClientReportController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::get('/data-extract/{session_id}', [DataExtractController::class, 'show']);
@@ -25,5 +26,5 @@ Route::get('/client-reports/{session_id}', [ClientReportController::class, 'show
 Route::post('/gerar-relatorio-cliente', [ClientController::class, 'clientGenerateReport'])->name('client.generate.report');
 Route::post('/clients/update-hidden-cards', [ClientController::class, 'updateHiddenCards']);
 Route::get('/clients/hidden-cards', [ClientController::class, 'getHiddenCards']);
-Route::post('/clients/eventos-liquidez', [ClientController::class, 'storeOrUpdateEventsLiquidez']);
-
+Route::post('/clients/eventos-liquidez', [ClientController::class, 'storeOrUpdateEventsLiquidity']);
+Route::get('/clients/eventos-liquidez', [ClientController::class, 'listEventsLiquidity']);
