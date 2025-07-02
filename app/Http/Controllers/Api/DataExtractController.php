@@ -8,16 +8,11 @@ use App\Http\Controllers\Controller;
 
 class DataExtractController extends Controller
 {
-    public function show(): JsonResponse
+    public function show(string $session_id): JsonResponse
     {
-
-        $lastSession = DataExtract::orderByDesc('created_at')->value('session_id');
-
-        if (!$lastSession) {
-            return response()->json(['message' => 'No session found.'], 404);
-        }
-
-        $data = DataExtract::where('session_id', $lastSession)->get();
+        $data = DataExtract::where('session_id', $session_id)
+            ->orderByDesc('created_at') 
+            ->first();
 
         if ($data->isEmpty()) {
             return response()->json(['message' => 'No data found.'], 404);
