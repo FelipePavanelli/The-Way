@@ -79,7 +79,7 @@ class ClientController extends Controller
         $client = Client::where('session_id', $request->session_id)->first();
 
         if (!$client) {
-            return response()->json(['message' => 'Cliente não encontrado'], 404);
+            return response()->json(['message' => 'Cliente não encontrado']);
         }
 
         return response()->json([
