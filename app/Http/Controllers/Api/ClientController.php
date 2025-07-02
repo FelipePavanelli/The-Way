@@ -111,8 +111,8 @@ class ClientController extends Controller
         // Transforma em array se for um único objeto
         $eventos = is_array($payload) && isset($payload[0]) ? $payload : [$payload];
 
+        // Validação de cada evento
         foreach ($eventos as $evento) {
-            // Validação inline
             $validator = Validator::make($evento, [
                 'session_id' => 'required|string',
                 'nome'       => 'required|string',
@@ -128,25 +128,21 @@ class ClientController extends Controller
                     'evento' => $evento
                 ], 422);
             }
-
-            // Atualiza ou insere com base em session_id + nome
-            $exists = DB::table('eventos_liquidez')
-                ->where('session_id', $evento['session_id'])
-                ->where('nome', $evento['nome'])
-                ->exists();
-
-            if ($exists) {
-                DB::table('eventos_liquidez')
-                    ->where('session_id', $evento['session_id'])
-                    ->where('nome', $evento['nome'])
-                    ->update($evento);
-            } else {
-                DB::table('eventos_liquidez')->insert($evento);
-            }
         }
 
+        // Pega o session_id (assumindo que todos são iguais)
+        $sessionId = $eventos[0]['session_id'];
+
+        // Apaga todos os eventos antigos desse session_id
+        DB::table('eventos_liquidez')
+            ->where('session_id', $sessionId)
+            ->delete();
+
+        // Insere os novos eventos
+        DB::table('eventos_liquidez')->insert($eventos);
+
         return response()->json([
-            'message' => 'Evento(s) salvo(s) com sucesso.'
+            'message' => 'Eventos substituídos com sucesso.'
         ]);
     }
 }
