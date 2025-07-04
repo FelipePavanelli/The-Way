@@ -111,14 +111,32 @@ class ClientController extends Controller
         // Transforma em array se for um único objeto
         $eventos = is_array($payload) && isset($payload[0]) ? $payload : [$payload];
 
-        // Validação de cada evento
+        // Verifica se o array está vazio ou contém dados vazios
+        if (empty($eventos) || (count($eventos) === 1 && empty(array_filter($eventos[0])))) {
+            // Caso esteja vazio, tenta pegar o session_id do request
+            $sessionId = $request->input('session_id');
+
+            if ($sessionId) {
+                DB::table('eventos_liquidez')->where('session_id', $sessionId)->delete();
+
+                return response()->json([
+                    'message' => 'Eventos apagados com sucesso (nenhum novo fornecido).'
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'Nenhum evento enviado e session_id ausente.'
+            ], 400);
+        }
+
+        // Validação apenas dos campos existentes
         foreach ($eventos as $evento) {
             $validator = Validator::make($evento, [
-                'session_id' => 'required|string',
-                'nome'       => 'required|string',
-                'idade'      => 'required|integer',
-                'tipo'       => 'required|string',
-                'valor'      => 'required|numeric',
+                'session_id' => 'nullable|string',
+                'nome'       => 'nullable|string',
+                'idade'      => 'nullable|integer',
+                'tipo'       => 'nullable|string',
+                'valor'      => 'nullable|numeric',
             ]);
 
             if ($validator->fails()) {
@@ -131,12 +149,16 @@ class ClientController extends Controller
         }
 
         // Pega o session_id (assumindo que todos são iguais)
-        $sessionId = $eventos[0]['session_id'];
+        $sessionId = $eventos[0]['session_id'] ?? null;
+
+        if (!$sessionId) {
+            return response()->json([
+                'message' => 'session_id obrigatório para salvar ou apagar eventos.'
+            ], 400);
+        }
 
         // Apaga todos os eventos antigos desse session_id
-        DB::table('eventos_liquidez')
-            ->where('session_id', $sessionId)
-            ->delete();
+        DB::table('eventos_liquidez')->where('session_id', $sessionId)->delete();
 
         // Insere os novos eventos
         DB::table('eventos_liquidez')->insert($eventos);
