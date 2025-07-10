@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Client;
 use Illuminate\Http\Request;
-// use App\Http\Requests\CreateClientRequest;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ClientReportMail;
 
 class ClientController extends Controller
 {
@@ -44,6 +45,9 @@ class ClientController extends Controller
                 'session_id' => $request->session_id,
             ]);
         }
+
+        // email
+        Mail::to($client->email)->send(new ClientReportMail($client->session_id, $client->email, $password));
 
         return response()->json([
             'session_id' => $client->session_id,
